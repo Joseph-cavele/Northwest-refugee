@@ -42,8 +42,9 @@ export function listNotifications(
   });
 }
 
-export function unreadCount(signal?: AbortSignal): Promise<{ count: number }> {
-  return api.get<{ count: number }>('/notifications/unread-count', { signal });
+/** The server names this `unread`, not `count` — see notification.service.js. */
+export function unreadCount(signal?: AbortSignal): Promise<{ unread: number }> {
+  return api.get<{ unread: number }>('/notifications/unread-count', { signal });
 }
 
 export function markRead(id: Id): Promise<NotificationRow> {

@@ -184,6 +184,20 @@ are public URLs, and one of them messages every beneficiary with an expiring per
 `vercel.json` holds the schedule **in UTC**, converted from the Africa/Johannesburg times
 `jobs/index.js` used to declare (SA observes no daylight saving, so the offset is fixed).
 
+## `next start` runs in production mode
+
+Worth knowing before it costs you an afternoon: `npm start` sets `NODE_ENV=production` even
+on a laptop. Three behaviours key off that, and all three change under `next start` in a way
+they never did under `npm run dev` on Express:
+
+- **`COOKIE_DOMAIN` is applied**, so a value meant for the deployed domain makes the browser
+  discard the refresh cookie on localhost. You sign in, and the next page load signs you out.
+  Leave it blank outside a real deployment.
+- **Action links are not logged.** The dev fallback in `email.service.js` is gated on
+  `NODE_ENV`, correctly — but it means a failed invite or reset email leaves nothing to
+  recover locally. Use `npm run dev` when you need the link.
+- **Error responses omit the stack.** Also correct, also surprising when debugging.
+
 ## Known gaps
 
 - **`ENCRYPTION_KEY` is not set in `.env`.** `utils/encrypt.js` throws on first use, so

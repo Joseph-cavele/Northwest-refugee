@@ -29,6 +29,25 @@ async function deliver({ to, subject, html }) {
   if (error) throw new Error(`Email delivery failed: ${error.message ?? error}`);
 }
 
+/**
+ * Log an action link when the email did not go out, so a developer is not locked out of a
+ * flow by a mail provider.
+ *
+ * IT MUST NEVER RUN IN PRODUCTION — the link is a single-use credential and this puts it in
+ * plain text in the log.
+ *
+ * `delivered` is false in two different situations and both need this. No provider
+ * configured is the obvious one. The other cost an afternoon: a provider IS configured but
+ * REFUSES the send — an unverified `from` domain returns 403 on every message — and the
+ * old version only checked `!resend`, so a misconfigured provider produced a flow with no
+ * way to finish it and no link anywhere to recover. The caller still throws; this only
+ * makes the failure survivable in development.
+ */
+function logActionLink(delivered, link, what) {
+  if (delivered || env.NODE_ENV === 'production') return;
+  log.warn({ link }, `${what} (dev only — email was not delivered)`);
+}
+
 // Inline styles only — email clients discard <style> blocks and external CSS.
 function layout(heading, bodyHtml) {
   return `<div style="font-family:system-ui,Arial,sans-serif;max-width:520px;margin:auto;color:#1a1a1a">
@@ -48,19 +67,24 @@ function button(href, label) {
 
 export async function sendInviteEmail(user, rawToken) {
   const link = `${env.APP_URL}/accept-invite?token=${encodeURIComponent(rawToken)}`;
-  await deliver({
-    to: user.email,
-    subject: 'You have been invited to the NWHR staff system',
-    html: layout(
-      `Welcome, ${user.name}`,
-      `<p>You have been invited to the North West House of Refuge staff dashboard.
-       Set your password to activate your account. This link expires in 7 days.</p>
-       ${button(link, 'Set your password')}`
-    ),
-  });
-  // Dev fallback: the link is the only way to complete the flow without a mail provider.
-  // It is a single-use credential, so this must never run in production.
-  if (!resend && env.NODE_ENV !== 'production') log.warn({ link }, 'invite link (dev only)');
+  let delivered = false;
+  try {
+    await deliver({
+      to: user.email,
+      subject: 'You have been invited to the NWHR staff system',
+      html: layout(
+        `Welcome, ${user.name}`,
+        `<p>You have been invited to the North West House of Refuge staff dashboard.
+         Set your password to activate your account. This link expires in 7 days.</p>
+         ${button(link, 'Set your password')}`
+      ),
+    });
+    delivered = Boolean(resend);
+  } finally {
+    // `finally`, not the success path: a refused send must still leave the link somewhere
+    // recoverable in development, and the throw must still reach the caller.
+    logActionLink(delivered, link, 'invite link');
+  }
 }
 
 /**
@@ -193,15 +217,20 @@ export async function sendAccessRequestRejectedEmail(request) {
 
 export async function sendPasswordResetEmail(user, rawToken) {
   const link = `${env.APP_URL}/reset-password?token=${encodeURIComponent(rawToken)}`;
-  await deliver({
-    to: user.email,
-    subject: 'Reset your NWHR password',
-    html: layout(
-      'Password reset requested',
-      `<p>We received a request to reset your password. This link expires in 1 hour.
-       If you did not request it, ignore this email — your password will not change.</p>
-       ${button(link, 'Reset password')}`
-    ),
-  });
-  if (!resend && env.NODE_ENV !== 'production') log.warn({ link }, 'reset link (dev only)');
+  let delivered = false;
+  try {
+    await deliver({
+      to: user.email,
+      subject: 'Reset your NWHR password',
+      html: layout(
+        'Password reset requested',
+        `<p>We received a request to reset your password. This link expires in 1 hour.
+         If you did not request it, ignore this email — your password will not change.</p>
+         ${button(link, 'Reset password')}`
+      ),
+    });
+    delivered = Boolean(resend);
+  } finally {
+    logActionLink(delivered, link, 'reset link');
+  }
 }

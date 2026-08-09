@@ -1,0 +1,51 @@
+- generic [ref=f4e4]:
+  - generic [ref=f4e52]:
+    - generic [ref=f4e53]:
+      - heading "Request staff access" [level=1] [ref=f4e54]
+      - paragraph [ref=f4e55]: For NWHR staff and volunteers. An administrator reviews every request.
+    - generic [ref=f4e56]:
+      - text: Looking for help from NWHR? You do not need an account —
+      - link "find support here" [ref=f4e57] [cursor=pointer]:
+        - /url: /get-help
+      - text: .
+    - alert [ref=f4e58]: Could not load the role and department lists. Please reload the page.
+    - generic [ref=f4e59]:
+      - generic [ref=f4e60]:
+        - generic [ref=f4e61]: First name
+        - textbox "First name" [ref=f4e62]
+      - generic [ref=f4e63]:
+        - generic [ref=f4e64]: Last name
+        - textbox "Last name" [ref=f4e65]
+      - generic [ref=f4e66]:
+        - generic [ref=f4e67]: Work email
+        - textbox "Work email" [ref=f4e68]
+      - generic [ref=f4e69]:
+        - generic [ref=f4e70]: Phone number
+        - textbox "Phone number" [ref=f4e71]:
+          - /placeholder: 072 123 4567
+        - generic [ref=f4e72]: South African or international. Stored in +27 format.
+      - generic [ref=f4e73]:
+        - generic [ref=f4e74]: Role you are applying for
+        - combobox "Role you are applying for" [disabled] [ref=f4e75]:
+          - option "Loading…" [selected]
+      - generic [ref=f4e76]:
+        - generic [ref=f4e77]: Department
+        - combobox "Department" [disabled] [ref=f4e78]:
+          - option "Loading…" [selected]
+      - generic [ref=f4e79]:
+        - generic [ref=f4e80]: Why do you need access? (optional)
+        - textbox "Why do you need access? (optional)" [ref=f4e81]
+        - generic [ref=f4e82]: Describe your role at NWHR. Do not include any beneficiary's details.
+    - button "Submit request" [disabled] [ref=f4e83]
+    - button "Already have an account? Sign in" [ref=f4e84]
+  - generic [ref=f4e40]:
+    - generic [ref=f4e41]:
+      - generic [ref=f4e42]: NWHR
+      - heading [level=2] [ref=f4e43]: Welcome back
+      - paragraph [ref=f4e44]: Already have an account? Sign in to reach your dashboard.
+      - button [ref=f4e45]: Sign in
+    - generic [ref=f4e46]:
+      - generic [ref=f4e47]: NWHR
+      - heading [level=2] [ref=f4e48]: Hello, friend
+      - paragraph [ref=f4e49]: New to the team? Request a staff account and an administrator will review it.
+      - button [ref=f4e50]: Request access

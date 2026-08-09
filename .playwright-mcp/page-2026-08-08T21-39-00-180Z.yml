@@ -1,0 +1,28 @@
+- generic [ref=e4]:
+  - generic [ref=e6]:
+    - generic [ref=e7]:
+      - heading "Sign in" [level=1] [ref=e8]
+      - paragraph [ref=e9]: North West House of Refuge staff dashboard.
+    - generic [ref=e10]:
+      - generic [ref=e11]: Email
+      - textbox "Email" [active] [ref=e12]
+    - generic [ref=e13]:
+      - generic [ref=e14]: Password
+      - generic [ref=e15]:
+        - textbox "Password" [ref=e16]
+        - button "Show password" [ref=e17]
+    - link "Forgot your password?" [ref=e21] [cursor=pointer]:
+      - /url: /auth/forgot-password
+    - button "Sign in" [ref=e22]
+    - button "Need an account? Request access" [ref=e23]
+  - generic [ref=e25]:
+    - generic [ref=e26]:
+      - generic [ref=e27]: NWHR
+      - heading [level=2] [ref=e28]: Welcome back
+      - paragraph [ref=e29]: Already have an account? Sign in to reach your dashboard.
+      - button [ref=e30]: Sign in
+    - generic [ref=e31]:
+      - generic [ref=e32]: NWHR
+      - heading [level=2] [ref=e33]: Hello, friend
+      - paragraph [ref=e34]: New to the team? Request a staff account and an administrator will review it.
+      - button [ref=e35]: Request access

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    {
+      "path": "/api/v1/cron/permit-expiry",
+      "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/v1/cron/daily-rollup",
+      "schedule": "30 22 * * *"
+    },
+    {
+      "path": "/api/v1/cron/finance-alerts",
+      "schedule": "0 6 * * 1"
+    }
+  ]
+}

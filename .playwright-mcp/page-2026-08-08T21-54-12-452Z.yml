@@ -1,0 +1,39 @@
+- generic [ref=f4e4]:
+  - generic [ref=f4e6]:
+    - generic [ref=f4e7]:
+      - heading "Sign in" [level=1] [ref=f4e8]
+      - paragraph [ref=f4e9]: North West House of Refuge staff dashboard.
+    - generic [ref=f4e10]:
+      - generic [ref=f4e11]: Email
+      - textbox "Email" [active] [ref=f4e12]
+    - generic [ref=f4e13]:
+      - generic [ref=f4e14]: Password
+      - generic [ref=f4e15]:
+        - textbox "Password" [ref=f4e16]
+        - button "Show password" [ref=f4e17]
+    - link "Forgot your password?" [ref=f4e21] [cursor=pointer]:
+      - /url: /auth/forgot-password
+    - button "Sign in" [ref=f4e22]
+    - button "Need an account? Request access" [ref=f4e23]
+    - generic [ref=f4e24]:
+      - generic [ref=f4e25]: Follow North West House of Refuge
+      - generic [ref=f4e26]:
+        - link "NWHR on Facebook" [ref=f4e27] [cursor=pointer]:
+          - /url: https://www.facebook.com/
+        - link "NWHR on Instagram" [ref=f4e30] [cursor=pointer]:
+          - /url: https://www.instagram.com/
+        - link "NWHR on LinkedIn" [ref=f4e33] [cursor=pointer]:
+          - /url: https://www.linkedin.com/
+        - link "NWHR on X" [ref=f4e36] [cursor=pointer]:
+          - /url: https://x.com/
+  - generic [ref=f4e40]:
+    - generic [ref=f4e41]:
+      - generic [ref=f4e42]: NWHR
+      - heading [level=2] [ref=f4e43]: Welcome back
+      - paragraph [ref=f4e44]: Already have an account? Sign in to reach your dashboard.
+      - button [ref=f4e45]: Sign in
+    - generic [ref=f4e46]:
+      - generic [ref=f4e47]: NWHR
+      - heading [level=2] [ref=f4e48]: Hello, friend
+      - paragraph [ref=f4e49]: New to the team? Request a staff account and an administrator will review it.
+      - button [ref=f4e50]: Request access

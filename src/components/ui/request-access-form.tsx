@@ -10,7 +10,7 @@ import { getAccessRequestOptions, submitAccessRequest } from '@/api/auth.api';
 import type { AccessRequestOptions, AccessRequestPayload } from '@/api/auth.api';
 import { useSubmit } from '@/hooks/useSubmit';
 import { ORG } from '@/lib/site';
-import { PATHS } from '@/routes/paths';
+import { PATHS } from '@/lib/paths';
 
 /*
  * Request a staff account.
@@ -22,7 +22,7 @@ import { PATHS } from '@/routes/paths';
  * is a form people fill in twice.
  *
  * Field names and limits mirror `submitAccessRequestSchema` in
- * Backend/src/modules/auth/auth.schema.js.
+ * src/server/modules/auth/auth.schema.js.
  */
 
 const EMPTY: AccessRequestPayload = {

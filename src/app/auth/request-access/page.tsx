@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { Spinner } from '@/components/ui/spinner';
-import RequestAccess from '@/auth/pages/RequestAccess';
+import RequestAccess from '@/auth/screens/RequestAccess';
 
 export const metadata: Metadata = { title: 'Request access' };
 

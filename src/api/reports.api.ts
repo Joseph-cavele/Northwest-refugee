@@ -5,7 +5,7 @@ import type { IsoDate } from '@/types/models';
  * The /reports endpoints, typed.
  *
  * Counts and totals only — nothing here returns a beneficiary, a case or a transaction.
- * See Backend/src/modules/reports/report.routes.js.
+ * See src/app/api/v1/reports/.
  */
 
 /** COUNT is a headcount; CENTS is money and must go through formatZAR, never divided here. */

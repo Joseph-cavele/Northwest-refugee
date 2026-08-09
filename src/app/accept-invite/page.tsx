@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { Spinner } from '@/components/ui/spinner';
-import AcceptInvite from '@/auth/pages/AcceptInvite';
+import AcceptInvite from '@/auth/screens/AcceptInvite';
 
 export const metadata: Metadata = { title: 'Accept your invitation' };
 

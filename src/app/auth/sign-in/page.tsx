@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { Spinner } from '@/components/ui/spinner';
-import Login from '@/auth/pages/Login';
+import Login from '@/auth/screens/Login';
 
 export const metadata: Metadata = { title: 'Sign in' };
 

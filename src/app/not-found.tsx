@@ -1,4 +1,4 @@
-import NotFoundPage from '@/public-site/pages/NotFound';
+import NotFoundPage from '@/components/NotFoundScreen';
 
 /*
  * The 404, as the App Router's convention.

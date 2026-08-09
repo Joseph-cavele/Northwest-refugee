@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { PATHS } from '@/routes/paths';
+import { PATHS } from '@/lib/paths';
 
 /*
  * `/` — the staff entry point.

@@ -1,6 +1,6 @@
 /*
- * The API envelope, as emitted by Backend/src/utils/apiResponse.js and
- * Backend/src/middleware/errorHandler.js. Every response in the system is one of
+ * The API envelope, as emitted by src/server/http/respond.js and
+ * src/server/http/errors.js. Every response in the system is one of
  * these two shapes — there are no bare payloads.
  */
 
@@ -32,7 +32,7 @@ export interface ApiFailure {
 export type ApiEnvelope<T> = ApiSuccess<T> | ApiFailure;
 
 /**
- * From Backend/src/utils/AppError.js. Part of the API contract — the client switches
+ * From src/server/utils/AppError.js. Part of the API contract — the client switches
  * on these, never on message text.
  */
 export type ApiErrorCode =
@@ -49,7 +49,7 @@ export type ApiErrorCode =
   /** Client-side only: the request never reached the server. */
   | 'NETWORK';
 
-/** From Backend/src/utils/paginate.js. */
+/** From src/server/utils/paginate.js. */
 export interface PaginationMeta {
   page: number;
   limit: number;

@@ -10,7 +10,7 @@ import type { SocialPlatform } from '@/components/ui/social-row';
 export const ORG = {
   name: 'North West House of Refuge',
   shortName: 'NWHR',
-  /** From Backend/CLAUDE.md. */
+  /** From CLAUDE.md. */
   tagline: 'Empowering. Integrating. Transforming Lives.',
   city: 'Rustenburg, North West',
 } as const;

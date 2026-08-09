@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import Overview from '@/dashboard/dashboard/pages/Overview';
+import Overview from '@/features/overview/Overview';
 import { DASHBOARD_BY_ROLE } from '@/types/enums';
-import { PATHS } from '@/routes/paths';
+import { PATHS } from '@/lib/paths';
 
 export const metadata: Metadata = { title: 'Overview' };
 

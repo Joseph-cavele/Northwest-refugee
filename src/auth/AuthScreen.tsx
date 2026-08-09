@@ -6,7 +6,7 @@ import { AuthSwitch } from '@/components/ui/auth-switch';
 import type { AuthPanel } from '@/components/ui/auth-switch';
 import type { Session } from '@/api/auth.api';
 import { useAuth } from './useAuth';
-import { PATHS } from '@/routes/paths';
+import { PATHS } from '@/lib/paths';
 import { SOCIAL_LINKS } from '@/lib/site';
 import { setMfaChallenge } from './mfaChallengeStore';
 

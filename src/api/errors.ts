@@ -5,7 +5,7 @@ import type { ApiErrorCode } from '@/types/api';
  * shaped to look like one.
  *
  * Callers switch on `code`, never on `message` — the codes are a contract
- * (Backend/src/utils/AppError.js), the messages are copy and change freely.
+ * (src/server/utils/AppError.js), the messages are copy and change freely.
  */
 export class ApiError extends Error {
   readonly code: ApiErrorCode;

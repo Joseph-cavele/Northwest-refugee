@@ -2,7 +2,7 @@ import { ROLES } from '@/types/enums';
 import type { Role } from '@/types/enums';
 
 /*
- * Mirror of Backend/src/config/permissions.js.
+ * Mirror of src/server/config/permissions.js.
  *
  * WHAT THIS IS FOR: deciding what to render. Hiding an "Approve" button the user cannot
  * use, and not linking to a page that would only 403.

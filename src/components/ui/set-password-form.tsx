@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
  */
 
 /**
- * Mirrors `strongPassword` in Backend/src/modules/auth/auth.schema.js, rule for rule.
+ * Mirrors `strongPassword` in src/server/modules/auth/auth.schema.js, rule for rule.
  *
  * Duplicated deliberately. The server is the authority and rejects anything failing
  * these — but someone choosing a password they cannot see needs the rules before they

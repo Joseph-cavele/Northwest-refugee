@@ -1,5 +1,5 @@
 import RequireAuth from '@/auth/RequireAuth';
-import { DashboardLayout } from '@/layouts/DashboardLayout';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
 /*
  * Everything behind a login.

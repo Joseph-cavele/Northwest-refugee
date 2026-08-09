@@ -1,5 +1,5 @@
 /*
- * Mirror of Backend/src/config/constants.js.
+ * Mirror of src/server/config/constants.js.
  *
  * These are wire values, not display strings — the API accepts and returns exactly
  * these tokens, so the arrays below are the client's copy of a server contract. When

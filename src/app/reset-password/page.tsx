@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { Spinner } from '@/components/ui/spinner';
-import ResetPassword from '@/auth/pages/ResetPassword';
+import ResetPassword from '@/auth/screens/ResetPassword';
 
 export const metadata: Metadata = { title: 'Choose a new password' };
 

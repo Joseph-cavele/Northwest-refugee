@@ -480,7 +480,7 @@ scheduler calling once is what prevents that.
 `reports` covers dashboard cards and the daily metric series. Report *export* — a
 funder-ready PDF or spreadsheet over a date range — is not built.
 
-**The test suite has not been ported.** `Backend/tests/` holds 405 tests built on supertest
+**The test suite has not been ported.** `tests/` holds 405 tests built on supertest
 against the Express `app` object, which no longer exists. The invariants worth
 re-establishing first, against the route handlers: self-approval rejection, budget overspend
 rejection, webhook idempotency, sensitive-read auditing, and consent-declined leaving no

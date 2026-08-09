@@ -21,11 +21,11 @@ logging or access control as high-stakes. When in doubt, ask rather than assume.
 
 ## The port from Express + Vite
 
-This was two applications — an Express 5 API in `Backend/` and a Vite SPA in `Front-End/`.
-Both directories are still on disk, unmodified, as the reference. **They are not built, not
-linted and not deployed.** Delete them once you are satisfied nothing was lost.
+This was two applications — an Express 5 API and a Vite SPA — in sibling directories. Both
+trees have been removed; the commit tagged `pre-cleanup` in the history holds them verbatim
+if something needs checking against the original.
 
-What actually moved, and what did not:
+What moved, and what did not:
 
 | Layer | Fate |
 |---|---|
@@ -38,9 +38,9 @@ What actually moved, and what did not:
 | `node-cron` | Replaced by `/api/v1/cron/[job]` + `vercel.json` |
 | React Router | Replaced by the App Router file tree |
 
-**`src/server/` is still plain JavaScript.** That is deliberate — `Backend/CLAUDE.md` said
-"no TypeScript, no build step", and half of that could not survive becoming a Next app.
-Keeping the language kept ~7 500 lines of service logic from being retyped in the same
+**`src/server/` is still plain JavaScript.** That is deliberate. The backend's own guidance
+was "no TypeScript, no build step", and half of that could not survive becoming a Next app —
+keeping the language kept ~7 500 lines of service logic from being retyped in the same
 change that swapped web framework. Do not convert it wholesale; it earns nothing.
 
 ## Stack
@@ -69,19 +69,34 @@ serverless runtime that kills an instance for what is a configuration problem.
 
 ```
 src/
-├── app/
-│   ├── api/v1/**/route.js     the API — one directory per URL segment
-│   ├── (pages)                 auth screens, dashboard, public site
-│   └── layout.tsx              AuthProvider wraps the router
-├── server/                     the API's brain — no React, no Next imports below http/
-│   ├── config/                 env, logger, db, cloudinary, constants, permissions, uploads
-│   ├── http/                   route(), respond, errors, rateLimit, upload
-│   ├── modules/<name>/         <name>.model.js · .schema.js · .service.js
-│   └── jobs/                   the three scheduled jobs, triggered over HTTP
-├── api/                        client-side fetch layer (client.ts + <module>.api.ts)
-├── auth/ components/ hooks/ lib/ layouts/ types/    the client
+├── app/                        Next owns this. The directory tree IS the URL.
+│   ├── api/v1/**/route.js        the API — one directory per URL segment
+│   ├── auth/ dashboard/ …        the screens, each a thin mount of a component
+│   ├── layout.tsx                AuthProvider wraps everything
+│   └── not-found.tsx
+├── server/                     the API's brain. No React, and no Next imports below http/
+│   ├── config/                   env, logger, db, cloudinary, constants, permissions, uploads
+│   ├── http/                     route(), respond, errors, rateLimit, upload
+│   ├── modules/<name>/           <name>.model.js · .schema.js · .service.js
+│   ├── jobs/                     the three scheduled jobs, triggered over HTTP
+│   └── seed.js                   first ED account, departments, pillar programmes
+├── api/                        client-side fetch layer — the only place fetch is called
+├── auth/                       session, guards, and the auth screens
+├── components/
+│   ├── ui/                       kebab-case shadcn-compatible primitives
+│   └── layout/                   DashboardLayout · Sidebar · TopBar
+├── features/<name>/            a dashboard module: its screen and its own components
+├── hooks/ lib/ types/
 └── styles/globals.css          @theme lives here
 ```
+
+**Naming:** `components/ui/` is kebab-case, because that is what the shadcn CLI generates
+and mixing cases on a case-insensitive filesystem produces TS1261 build errors. Everything
+else is PascalCase for components. Do not add `Button.tsx` next to `button.tsx`.
+
+There is no `routes/` or `layouts/` directory and no `pages/` anywhere — those names all
+meant something under React Router or the Pages Router, and under the App Router they would
+each be a lie about where routing happens.
 
 **Strict layering, unchanged from Express:**
 
@@ -180,7 +195,7 @@ are public URLs, and one of them messages every beneficiary with an expiring per
   credential limiters do not. Move them to a shared store (Redis/KV/Mongo TTL) before
   go-live. The per-account five-failure lockout in `auth.service.js` is unaffected and is
   the real backstop.
-- **The 405-test suite in `Backend/tests/` has not been ported.** It is built on supertest
+- **The 405-test suite in `tests/` has not been ported.** It is built on supertest
   against the Express `app` object, which no longer exists. The invariants it protects —
   self-approval rejection, webhook idempotency, sensitive-read auditing, consent-declined
   leaving no trace — are worth re-establishing against the route handlers.

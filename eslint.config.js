@@ -76,4 +76,22 @@ export default [
     files: ['src/**/*.d.ts'],
     rules: { '@typescript-eslint/no-unused-vars': 'off', '@typescript-eslint/no-empty-object-type': 'off' },
   },
+
+  /*
+   * tests/ is the Express-era suite, preserved and awaiting a port — see tests/README.md.
+   * Linted rather than ignored so it does not rot further while it waits, but with the
+   * globals its runner provides, which are not the browser's.
+   */
+  {
+    files: ['tests/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 2023,
+      sourceType: 'module',
+      globals: { ...globals.node, ...globals.vitest },
+    },
+    rules: {
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      'no-console': 'off',
+    },
+  },
 ];

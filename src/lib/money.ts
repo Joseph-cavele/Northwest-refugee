@@ -118,7 +118,7 @@ export function formatZARCompact(cents: number): string {
  * Split an amount across weights without losing a cent.
  *
  * R100 three ways is [3334, 3333, 3333], never three lots of 33.33. Mirrors
- * allocate() in Backend/src/utils/money.js — the largest-remainder method, with the
+ * allocate() in src/server/utils/money.js — the largest-remainder method, with the
  * leftover cents going to the earliest entries.
  */
 export function allocate(cents: number, weights: number[]): number[] {

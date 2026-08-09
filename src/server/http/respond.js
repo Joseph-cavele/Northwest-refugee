@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
  *
  * The contract is unchanged from Express — `{ success, data, meta? }` on the way out,
  * `{ success: false, error, requestId }` on failure — because the whole front end switches
- * on it and Backend/API.md documents it. Only the transport changed.
+ * on it and API.md documents it. Only the transport changed.
  *
  * Errors are NOT built here. They are thrown as AppError and shaped in one place by
  * `route()`, exactly as errorHandler was the only error formatter under Express.

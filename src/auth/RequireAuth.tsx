@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Spinner } from '@/components/ui/spinner';
 import { useAuth } from './useAuth';
-import { PATHS } from '@/routes/paths';
+import { PATHS } from '@/lib/paths';
 
 /*
  * Gate for everything behind a login.

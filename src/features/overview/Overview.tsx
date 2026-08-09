@@ -1,6 +1,8 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
+import { CalendarDays, GraduationCap, HandCoins, Landmark, Users } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { ErrorAlert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -8,17 +10,20 @@ import { useApi } from '@/hooks/useApi';
 import { useAuth } from '@/auth/useAuth';
 import { PERMISSIONS } from '@/auth/permissions';
 import { getDashboardCards, getMetrics } from '@/api/reports.api';
-import type { CardGroup, DashboardCard, MetricRow } from '@/api/reports.api';
+import type { DashboardCard, MetricRow } from '@/api/reports.api';
 import { listCases, listUrgentCases } from '@/api/cases.api';
 import { listNotifications } from '@/api/notifications.api';
 import { formatDateTime } from '@/lib/dates';
+import { ROLE_LABELS } from '@/types/enums';
 import type { ProgrammePillar } from '@/types/enums';
-import { StatCard } from './components/StatCard';
-import { AreaChart } from './components/AreaChart';
-import { PillarDonut } from './components/PillarDonut';
+import { KpiCard } from './components/KpiCard';
+import { StatTile } from './components/StatTile';
+import { SeriesChart } from './components/SeriesChart';
+import { PillarBars } from './components/PillarBars';
 import { RecentCases } from './components/RecentCases';
 import { NotificationsPanel } from './components/NotificationsPanel';
 import { UrgentQueue } from './components/UrgentQueue';
+import { toPoints } from './lib/series';
 
 /*
  * The screen every role lands on after signing in.
@@ -28,69 +33,71 @@ import { UrgentQueue } from './components/UrgentQueue';
  * where that applies. Branching per role here would be a second copy of the permission
  * matrix, and the copy that drifts is the one that leaks.
  *
- * EVERY PANEL IS GATED BEFORE IT IS FETCHED. `can()` decides whether to ask at all, so a
- * comms officer does not spend a request earning a 403 on a caseload they cannot see, and
- * the panel is ABSENT rather than empty. An empty panel says "there are no urgent cases";
- * the truth is "you cannot see cases", and the two must not look alike.
+ * EVERY PANEL IS GATED BEFORE IT FETCHES. `can()` decides whether to ask at all, so a comms
+ * officer does not spend a request earning a 403 on a caseload they cannot see, and the
+ * panel is ABSENT rather than empty. An empty panel says "there is no urgent work"; the
+ * truth is "you cannot see cases", and those must not look alike.
  *
- * NOTHING ON THIS PAGE IS INVENTED. Where the reference layout has a panel NWHR has no data
- * for — a guest-review list — there is no panel. A dashboard that fills space with plausible
- * numbers is worse than one with a gap in it, because a funder report is eventually built
- * from what is on this screen.
+ * NOTHING HERE IS INVENTED. The reference this was built from carries a percentage under
+ * every figure and a chart in every corner; those appear here only where the stored series
+ * can support the arithmetic. A number nobody measured is worse than a blank space, because
+ * a funder report is eventually built from what a person read on this screen.
  */
 
-const GROUP_HEADINGS: Record<CardGroup, string> = {
-  register: 'The register',
-  casework: 'Casework',
-  programmes: 'Programmes',
-  events: 'Events',
-  finance: 'Finance',
-  fundraising: 'Fundraising',
-};
-
-// Fixed order, so the page does not reshuffle itself between roles or reloads.
-const GROUP_ORDER: CardGroup[] = [
-  'register',
-  'casework',
-  'programmes',
-  'events',
-  'finance',
-  'fundraising',
+/** The four measures that lead. Chosen because each one, moving, changes somebody's day. */
+const HEADLINE_KEYS = [
+  'cases.open',
+  'service_requests.overdue',
+  'beneficiaries.registered',
+  'donations.settled_value',
 ];
 
-/** The measures worth putting on the hero chart, and what to call them. */
-const TREND_OPTIONS = [
-  { key: 'beneficiaries.registered', label: 'New registrations' },
-  { key: 'cases.open', label: 'Open cases' },
-  { key: 'service_requests.overdue', label: 'Overdue requests' },
-  { key: 'donations.settled_value', label: 'Donation income' },
-] as const;
+/** The secondary figures, and the logo figure each borrows for its chip. */
+const TILES: { key: string; icon: LucideIcon; tone: 'brand' | 'accent' | 'gold' | 'danger' }[] = [
+  { key: 'beneficiaries.active', icon: Users, tone: 'brand' },
+  { key: 'enrollments.active', icon: GraduationCap, tone: 'gold' },
+  { key: 'events.upcoming', icon: CalendarDays, tone: 'accent' },
+  { key: 'transactions.pending_approval', icon: Landmark, tone: 'danger' },
+  { key: 'donations.settled_count', icon: HandCoins, tone: 'brand' },
+  { key: 'permits.expiring_30d', icon: Users, tone: 'danger' },
+];
 
 function Panel({
   title,
-  action,
+  subtitle,
   children,
   className,
 }: {
   title: string;
-  action?: React.ReactNode;
+  subtitle?: string;
   children: React.ReactNode;
   className?: string;
 }) {
   return (
     <section className={`flex flex-col rounded-xl border border-line bg-surface ${className ?? ''}`}>
-      <header className="flex items-center justify-between gap-3 border-b border-line px-5 py-3.5">
+      <header className="border-b border-line px-5 py-3.5">
         <h2 className="text-sm font-semibold text-body">{title}</h2>
-        {action}
+        {subtitle && <p className="mt-0.5 text-xs text-subtle">{subtitle}</p>}
       </header>
       <div className="min-h-0 flex-1">{children}</div>
     </section>
   );
 }
 
+/** Shown wherever a chart has no history yet. Says what would fill it, not just that it is empty. */
+function AwaitingSnapshot() {
+  return (
+    <div className="max-w-xs text-center">
+      <p className="text-sm text-muted">No history yet.</p>
+      <p className="mt-1 text-xs text-subtle">
+        The daily snapshot writes one row per day. Charts fill in from the first run.
+      </p>
+    </div>
+  );
+}
+
 export default function Overview() {
   const { user, can } = useAuth();
-  const [trend, setTrend] = useState<(typeof TREND_OPTIONS)[number]['key']>('cases.open');
 
   const mayReadMetrics = can(PERMISSIONS.METRIC_READ);
   const mayReadCases = can(PERMISSIONS.CASE_READ);
@@ -99,13 +106,36 @@ export default function Overview() {
     useCallback((signal: AbortSignal) => getDashboardCards(signal), [])
   );
 
-  const { data: series } = useApi<MetricRow[]>(
+  // One request for every headline series, so four cards do not become four round trips.
+  const { data: headlineSeries } = useApi<MetricRow[]>(
     useCallback(
       (signal: AbortSignal) =>
-        mayReadMetrics ? getMetrics({ key: trend, limit: 90 }, signal) : Promise.resolve([]),
-      [mayReadMetrics, trend]
+        mayReadMetrics ? getMetrics({ key: HEADLINE_KEYS, limit: 100 }, signal) : Promise.resolve([]),
+      [mayReadMetrics]
     ),
-    [trend, mayReadMetrics]
+    [mayReadMetrics]
+  );
+
+  const { data: throughput } = useApi<MetricRow[]>(
+    useCallback(
+      (signal: AbortSignal) =>
+        mayReadMetrics
+          ? getMetrics({ key: ['beneficiaries.registered', 'cases.closed'], limit: 100 }, signal)
+          : Promise.resolve([]),
+      [mayReadMetrics]
+    ),
+    [mayReadMetrics]
+  );
+
+  const { data: workload } = useApi<MetricRow[]>(
+    useCallback(
+      (signal: AbortSignal) =>
+        mayReadMetrics
+          ? getMetrics({ key: ['cases.open', 'service_requests.open'], limit: 100 }, signal)
+          : Promise.resolve([]),
+      [mayReadMetrics]
+    ),
+    [mayReadMetrics]
   );
 
   const { data: pillars } = useApi<MetricRow[]>(
@@ -132,8 +162,7 @@ export default function Overview() {
 
   const { data: urgent } = useApi(
     useCallback(
-      (signal: AbortSignal) =>
-        mayReadCases ? listUrgentCases({ limit: 6 }, signal) : Promise.resolve([]),
+      (signal: AbortSignal) => (mayReadCases ? listUrgentCases({ limit: 5 }, signal) : Promise.resolve([])),
       [mayReadCases]
     ),
     [mayReadCases]
@@ -144,32 +173,49 @@ export default function Overview() {
     useCallback((signal: AbortSignal) => listNotifications({ limit: 5 }, signal), [])
   );
 
-  const firstName = user?.name.split(' ')[0] ?? '';
-  const selected = TREND_OPTIONS.find((option) => option.key === trend)!;
+  const byKey = (key: string): DashboardCard | undefined =>
+    cards?.cards.find((card) => card.key === key);
 
-  // Only the most recent row per pillar — the series carries one row per day.
+  const headlines = HEADLINE_KEYS.map(byKey).filter(Boolean) as DashboardCard[];
+  const tiles = TILES.map((t) => ({ ...t, card: byKey(t.key) })).filter((t) => t.card);
+
+  // The series carries one row per day; the newest per pillar is the current level.
   const pillarCounts: Partial<Record<ProgrammePillar, number>> = {};
   for (const row of pillars ?? []) {
     if (row.dimensionValue) pillarCounts[row.dimensionValue as ProgrammePillar] = row.value;
   }
 
-  const byGroup = (group: CardGroup): DashboardCard[] =>
-    (cards?.cards ?? []).filter((card) => card.group === group);
+  const firstName = user?.name.split(' ')[0] ?? '';
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-body">
-            {firstName ? `Welcome back, ${firstName}` : 'Overview'}
-          </h1>
-          <p className="mt-1 text-sm text-muted">
-            {cards ? `Figures as at ${formatDateTime(cards.generatedAt)}` : 'Your figures for today.'}
-          </p>
+      {/*
+        * The signature: the four figures from the mark, as a spine.
+        *
+        * `.brand-rule` is NWHR's own device — a black house sheltering four figures in blue,
+        * orange, gold and red — and it is the one place on this screen the full palette
+        * appears at once. Everything else stays black-and-white with blue on the actions,
+        * which is what the design system asks for and what keeps this from looking like the
+        * purple admin template it was modelled on.
+        */}
+      <header className="relative overflow-hidden rounded-xl border border-line bg-surface">
+        <div className="brand-rule absolute inset-y-0 left-0 w-1" aria-hidden="true" />
+        <div className="flex flex-wrap items-end justify-between gap-4 py-5 pr-5 pl-6">
+          <div>
+            <p className="text-[0.6875rem] font-semibold tracking-[0.16em] text-subtle uppercase">
+              {user ? ROLE_LABELS[user.role] : 'Dashboard'}
+            </p>
+            <h1 className="mt-1.5 text-2xl font-semibold tracking-[-0.02em] text-body">
+              {firstName ? `Welcome back, ${firstName}` : 'Overview'}
+            </h1>
+            <p className="mt-1 text-sm text-muted">
+              {cards ? `Figures as at ${formatDateTime(cards.generatedAt)}` : 'Loading your figures…'}
+            </p>
+          </div>
+          <Button variant="subtle" onClick={reload}>
+            Refresh
+          </Button>
         </div>
-        <Button variant="subtle" onClick={reload}>
-          Refresh
-        </Button>
       </header>
 
       {loading && !cards && <Spinner label="Loading your figures" className="py-16" />}
@@ -183,102 +229,96 @@ export default function Overview() {
         </div>
       )}
 
-      {/* --- the hero trend, and the pillar split beside it --- */}
+      {/* --- the four that lead --- */}
+      {headlines.length > 0 && (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {headlines.map((card) => (
+            <KpiCard key={card.key} card={card} series={headlineSeries ?? []} />
+          ))}
+        </div>
+      )}
+
+      {/* --- two charts, each a pair that shares a unit and a kind --- */}
       {mayReadMetrics && (
-        <div className="grid gap-6 xl:grid-cols-3">
+        <div className="grid gap-6 xl:grid-cols-2">
           <Panel
-            title={selected.label}
-            className="xl:col-span-2"
-            action={
-              <label className="flex items-center gap-2 text-xs text-subtle">
-                <span className="sr-only">Choose a measure</span>
-                <select
-                  value={trend}
-                  onChange={(event) => setTrend(event.target.value as typeof trend)}
-                  className="rounded-lg border border-line bg-surface px-2 py-1 text-xs text-body"
-                >
-                  {TREND_OPTIONS.map((option) => (
-                    <option key={option.key} value={option.key}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            }
+            title="Intake and completion"
+            subtitle="People registered against cases closed — both counts, both per day"
           >
             <div className="p-4">
-              {series && series.length > 0 ? (
-                <AreaChart
-                  points={series.map((row) => ({ date: row.date, value: row.value }))}
-                  unit={series[0]!.unit}
-                  label={selected.label}
-                />
-              ) : (
-                /*
-                 * Truthful, not decorative. The series is written by the daily snapshot; if
-                 * it has never run there is genuinely no history, and drawing a flat line at
-                 * zero would state that nothing happened.
-                 */
-                <div className="grid min-h-52 place-items-center px-6 text-center">
-                  <p className="max-w-sm text-sm text-muted">
-                    No stored history yet. The daily snapshot writes one row per day — the
-                    chart fills in from the first run.
-                  </p>
-                </div>
-              )}
+              <SeriesChart
+                variant="bars"
+                unit="COUNT"
+                empty={<AwaitingSnapshot />}
+                series={[
+                  { key: 'registered', label: 'Registered', points: toPoints(throughput ?? [], 'beneficiaries.registered') },
+                  { key: 'closed', label: 'Cases closed', points: toPoints(throughput ?? [], 'cases.closed') },
+                ]}
+              />
             </div>
           </Panel>
 
-          <Panel title="Open requests by pillar">
-            <div className="p-5">
-              <PillarDonut counts={pillarCounts} />
+          <Panel
+            title="Live workload"
+            subtitle="What is open right now — levels, so the lines are not summed"
+          >
+            <div className="p-4">
+              <SeriesChart
+                variant="line"
+                unit="COUNT"
+                empty={<AwaitingSnapshot />}
+                series={[
+                  { key: 'cases', label: 'Open cases', points: toPoints(workload ?? [], 'cases.open') },
+                  { key: 'requests', label: 'Open requests', points: toPoints(workload ?? [], 'service_requests.open') },
+                ]}
+              />
             </div>
           </Panel>
         </div>
       )}
 
-      {/* --- the KPI rows, grouped exactly as the server grouped them --- */}
-      {cards &&
-        GROUP_ORDER.filter((group) => byGroup(group).length > 0).map((group) => (
-          <section key={group} aria-labelledby={`group-${group}`} className="flex flex-col gap-3">
-            <h2
-              id={`group-${group}`}
-              className="text-xs font-semibold tracking-[0.09em] text-subtle uppercase"
-            >
-              {GROUP_HEADINGS[group]}
-            </h2>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {byGroup(group).map((card) => (
-                <StatCard key={card.key} card={card} />
-              ))}
-            </div>
-          </section>
-        ))}
+      {/* --- the secondary figures --- */}
+      {tiles.length > 0 && (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          {tiles.map((tile) => (
+            <StatTile key={tile.key} card={tile.card!} icon={tile.icon} tone={tile.tone} />
+          ))}
+        </div>
+      )}
 
-      {/* --- casework, and what needs a person --- */}
+      {/* --- where the work sits, and what needs a person --- */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {mayReadMetrics && (
+          <Panel title="Where the work sits" subtitle="Open service requests by pillar">
+            <div className="p-5">
+              <PillarBars counts={pillarCounts} />
+            </div>
+          </Panel>
+        )}
+
+        {mayReadCases && (
+          <Panel title="Needs a person today" subtitle="Escalated and still open, longest first">
+            <UrgentQueue cases={urgent ?? []} />
+          </Panel>
+        )}
+
+        <Panel title="Notifications" subtitle="Addressed to you">
+          <NotificationsPanel notifications={notifications ?? []} />
+        </Panel>
+      </div>
+
+      {/* --- the register itself --- */}
       {mayReadCases && (
-        <Panel title="Recently opened cases">
+        <Panel title="Recently opened cases" subtitle="The eight most recent files you can open">
           <RecentCases cases={recentCases ?? []} />
         </Panel>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Panel title="Notifications">
-          <NotificationsPanel notifications={notifications ?? []} />
-        </Panel>
-
-        {mayReadCases && (
-          <Panel title="Escalated and still open">
-            <UrgentQueue cases={urgent ?? []} />
-          </Panel>
-        )}
-      </div>
-
-      {cards && cards.cards.length === 0 && !mayReadCases && (
+      {cards && cards.cards.length === 0 && (
         /*
          * Reachable: a role can hold report:read and none of the permissions behind any
-         * individual card. Saying so is better than an empty page that looks broken — and
-         * better than inventing zeros, which would state something untrue.
+         * individual card. Saying so beats an empty page that reads as broken — and beats
+         * inventing zeros, which would state something untrue.
          */
         <p className="rounded-xl border border-line bg-surface p-6 text-sm text-muted">
           There are no figures your role can see yet. Your work lives in the sections of the

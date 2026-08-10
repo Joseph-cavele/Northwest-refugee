@@ -19,9 +19,11 @@ import { HeroCard } from './components/HeroCard';
 import { SeriesChart } from './components/SeriesChart';
 import { PillarBars } from './components/PillarBars';
 import { RatioGauge } from './components/RatioGauge';
+import { AlertsStrip } from './components/AlertsStrip';
 import { RecentCases } from './components/RecentCases';
 import { UrgentQueue } from './components/UrgentQueue';
 import { sumIntoWeeks, toPoints } from './lib/series';
+import { deriveAlerts } from './lib/alerts';
 
 /*
  * The screen every role lands on after signing in.
@@ -188,6 +190,12 @@ export default function Overview() {
       : null;
   const tiles = TILES.map((t) => ({ ...t, card: byKey(t.key) })).filter((t) => t.card);
 
+  /*
+   * Derived from the cards already on hand, so the permission gating comes for free: the
+   * server only sent cards this role earns, and a rule with no card behind it stays quiet.
+   */
+  const alerts = deriveAlerts(cards?.cards ?? []);
+
   // The series carries one row per day; the newest per pillar is the current level.
   const pillarCounts: Partial<Record<ProgrammePillar, number>> = {};
   for (const row of pillars ?? []) {
@@ -239,6 +247,15 @@ export default function Overview() {
           </div>
         </div>
       )}
+
+      {/*
+        * --- what needs a person today ---
+        *
+        * High on the page but below the greeting, so the reader is oriented before being
+        * handed a problem. Absent when nothing has fired, apart from one muted line — a
+        * reader who sees nothing cannot tell whether the check ran.
+        */}
+      {cards && <AlertsStrip alerts={alerts} />}
 
       {/* --- the four supporting figures --- */}
       {tiles.length > 0 && (

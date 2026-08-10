@@ -12,15 +12,14 @@ import { PERMISSIONS } from '@/auth/permissions';
 import { getDashboardCards, getMetrics } from '@/api/reports.api';
 import type { DashboardCard, MetricRow } from '@/api/reports.api';
 import { listCases, listUrgentCases } from '@/api/cases.api';
-import { listNotifications } from '@/api/notifications.api';
 import type { ProgrammePillar } from '@/types/enums';
 import { KpiCard } from './components/KpiCard';
 import { StatTile } from './components/StatTile';
 import { HeroCard } from './components/HeroCard';
 import { SeriesChart } from './components/SeriesChart';
 import { PillarBars } from './components/PillarBars';
+import { RatioGauge } from './components/RatioGauge';
 import { RecentCases } from './components/RecentCases';
-import { NotificationsPanel } from './components/NotificationsPanel';
 import { UrgentQueue } from './components/UrgentQueue';
 import { toPoints } from './lib/series';
 
@@ -171,15 +170,22 @@ export default function Overview() {
     [mayReadCases]
   );
 
-  // Notifications need no permission — they are always the caller's own.
-  const { data: notifications } = useApi(
-    useCallback((signal: AbortSignal) => listNotifications({ limit: 5 }, signal), [])
-  );
-
   const byKey = (key: string): DashboardCard | undefined =>
     cards?.cards.find((card) => card.key === key);
 
   const emphasis = EMPHASIS_KEYS.map(byKey).filter(Boolean) as DashboardCard[];
+
+  /*
+   * Derived from two cards the server already sent, not from a third request — and only
+   * when BOTH are present. A role that can see overdue work but not the open total would
+   * otherwise get a percentage of an unknown, which is a number with no meaning.
+   */
+  const openRequests = byKey('service_requests.open');
+  const overdueRequests = byKey('service_requests.overdue');
+  const overdueRatio =
+    openRequests && overdueRequests
+      ? { open: openRequests.value, overdue: overdueRequests.value }
+      : null;
   const tiles = TILES.map((t) => ({ ...t, card: byKey(t.key) })).filter((t) => t.card);
 
   // The series carries one row per day; the newest per pillar is the current level.
@@ -243,10 +249,40 @@ export default function Overview() {
         </div>
       )}
 
-      {/* --- two charts, each a pair that shares a unit and a kind --- */}
-      {mayReadMetrics && (
-        <div className="grid gap-6 xl:grid-cols-2">
+      {/*
+        * --- the chart row: a ratio, a ranked list, and the wide chart ---
+        *
+        * The reference's proportions, roughly 1:1:2, because the same thing is true of the
+        * content: two narrow panels that answer "how bad" and "where", and a wide one that
+        * answers "which way is it going". The wide chart earns the width — a grouped bar
+        * over 46 days is unreadable in a quarter of a row.
+        */}
+      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-4">
+        {overdueRatio && (
+          <Panel title="How much is late" subtitle="Open service requests past their standard">
+            <div className="p-5">
+              <RatioGauge
+                value={overdueRatio.overdue}
+                total={overdueRatio.open}
+                label="past due"
+                caption={`${overdueRatio.overdue} of ${overdueRatio.open} open requests are past the service standard for their urgency.`}
+                highIsBad
+              />
+            </div>
+          </Panel>
+        )}
+
+        {mayReadMetrics && (
+          <Panel title="Where the work sits" subtitle="Open service requests by pillar">
+            <div className="p-5">
+              <PillarBars counts={pillarCounts} />
+            </div>
+          </Panel>
+        )}
+
+        {mayReadMetrics && (
           <Panel
+            className="xl:col-span-2"
             title="Intake and completion"
             subtitle="People registered against cases closed — both counts, both per day"
           >
@@ -262,10 +298,16 @@ export default function Overview() {
               />
             </div>
           </Panel>
+        )}
+      </div>
 
+      {/* --- the trend, and what needs a person --- */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {mayReadMetrics && (
           <Panel
+            className="lg:col-span-2"
             title="Live workload"
-            subtitle="What is open right now — levels, so the lines are not summed"
+            subtitle="What is open right now — levels, so the lines are never summed"
           >
             <div className="p-4">
               <SeriesChart
@@ -279,28 +321,18 @@ export default function Overview() {
               />
             </div>
           </Panel>
-        </div>
-      )}
-
-      {/* --- where the work sits, and what needs a person --- */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {mayReadMetrics && (
-          <Panel title="Where the work sits" subtitle="Open service requests by pillar">
-            <div className="p-5">
-              <PillarBars counts={pillarCounts} />
-            </div>
-          </Panel>
         )}
 
+        {/*
+          * Notifications used to sit here too. They now live behind the topbar's bell,
+          * where the unread count already is — the same list in two places on one screen
+          * taught the reader that one of them was not worth checking.
+          */}
         {mayReadCases && (
           <Panel title="Needs a person today" subtitle="Escalated and still open, longest first">
             <UrgentQueue cases={urgent ?? []} />
           </Panel>
         )}
-
-        <Panel title="Notifications" subtitle="Addressed to you">
-          <NotificationsPanel notifications={notifications ?? []} />
-        </Panel>
       </div>
 
       {/* --- the register itself --- */}

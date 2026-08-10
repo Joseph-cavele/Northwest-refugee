@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
-import { CalendarDays, GraduationCap, HandCoins, Landmark, Users } from 'lucide-react';
+import { CalendarDays, FolderOpen, GraduationCap, HandCoins } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { ErrorAlert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -13,11 +13,10 @@ import { getDashboardCards, getMetrics } from '@/api/reports.api';
 import type { DashboardCard, MetricRow } from '@/api/reports.api';
 import { listCases, listUrgentCases } from '@/api/cases.api';
 import { listNotifications } from '@/api/notifications.api';
-import { formatDateTime } from '@/lib/dates';
-import { ROLE_LABELS } from '@/types/enums';
 import type { ProgrammePillar } from '@/types/enums';
 import { KpiCard } from './components/KpiCard';
 import { StatTile } from './components/StatTile';
+import { HeroCard } from './components/HeroCard';
 import { SeriesChart } from './components/SeriesChart';
 import { PillarBars } from './components/PillarBars';
 import { RecentCases } from './components/RecentCases';
@@ -44,22 +43,26 @@ import { toPoints } from './lib/series';
  * a funder report is eventually built from what a person read on this screen.
  */
 
-/** The four measures that lead. Chosen because each one, moving, changes somebody's day. */
-const HEADLINE_KEYS = [
-  'cases.open',
-  'service_requests.overdue',
-  'beneficiaries.registered',
-  'donations.settled_value',
-];
+/** The hero: who is on the register, and how many arrived this month. */
+const HERO_KEY = 'beneficiaries.active';
+const HERO_SUPPORTING_KEY = 'beneficiaries.registered';
+
+/*
+ * The two figures that mean somebody has to do something today.
+ *
+ * The reference puts its two emphasis cards next to the hero and gives them the same weight
+ * as the headline. That is right, and these are the two that earn it: an overdue request
+ * and an escalated case are both a person waiting. Everything else on this screen is
+ * context.
+ */
+const EMPHASIS_KEYS = ['service_requests.overdue', 'cases.escalated'];
 
 /** The secondary figures, and the logo figure each borrows for its chip. */
 const TILES: { key: string; icon: LucideIcon; tone: 'brand' | 'accent' | 'gold' | 'danger' }[] = [
-  { key: 'beneficiaries.active', icon: Users, tone: 'brand' },
+  { key: 'cases.open', icon: FolderOpen, tone: 'brand' },
   { key: 'enrollments.active', icon: GraduationCap, tone: 'gold' },
   { key: 'events.upcoming', icon: CalendarDays, tone: 'accent' },
-  { key: 'transactions.pending_approval', icon: Landmark, tone: 'danger' },
-  { key: 'donations.settled_count', icon: HandCoins, tone: 'brand' },
-  { key: 'permits.expiring_30d', icon: Users, tone: 'danger' },
+  { key: 'donations.settled_value', icon: HandCoins, tone: 'brand' },
 ];
 
 function Panel({
@@ -106,11 +109,11 @@ export default function Overview() {
     useCallback((signal: AbortSignal) => getDashboardCards(signal), [])
   );
 
-  // One request for every headline series, so four cards do not become four round trips.
+  // One request for both emphasis series, so two cards do not become two round trips.
   const { data: headlineSeries } = useApi<MetricRow[]>(
     useCallback(
       (signal: AbortSignal) =>
-        mayReadMetrics ? getMetrics({ key: HEADLINE_KEYS, limit: 100 }, signal) : Promise.resolve([]),
+        mayReadMetrics ? getMetrics({ key: EMPHASIS_KEYS, limit: 100 }, signal) : Promise.resolve([]),
       [mayReadMetrics]
     ),
     [mayReadMetrics]
@@ -176,7 +179,7 @@ export default function Overview() {
   const byKey = (key: string): DashboardCard | undefined =>
     cards?.cards.find((card) => card.key === key);
 
-  const headlines = HEADLINE_KEYS.map(byKey).filter(Boolean) as DashboardCard[];
+  const emphasis = EMPHASIS_KEYS.map(byKey).filter(Boolean) as DashboardCard[];
   const tiles = TILES.map((t) => ({ ...t, card: byKey(t.key) })).filter((t) => t.card);
 
   // The series carries one row per day; the newest per pillar is the current level.
@@ -185,39 +188,8 @@ export default function Overview() {
     if (row.dimensionValue) pillarCounts[row.dimensionValue as ProgrammePillar] = row.value;
   }
 
-  const firstName = user?.name.split(' ')[0] ?? '';
-
   return (
     <div className="flex flex-col gap-6">
-      {/*
-        * The signature: the four figures from the mark, as a spine.
-        *
-        * `.brand-rule` is NWHR's own device — a black house sheltering four figures in blue,
-        * orange, gold and red — and it is the one place on this screen the full palette
-        * appears at once. Everything else stays black-and-white with blue on the actions,
-        * which is what the design system asks for and what keeps this from looking like the
-        * purple admin template it was modelled on.
-        */}
-      <header className="relative overflow-hidden rounded-xl border border-line bg-surface">
-        <div className="brand-rule absolute inset-y-0 left-0 w-1" aria-hidden="true" />
-        <div className="flex flex-wrap items-end justify-between gap-4 py-5 pr-5 pl-6">
-          <div>
-            <p className="text-[0.6875rem] font-semibold tracking-[0.16em] text-subtle uppercase">
-              {user ? ROLE_LABELS[user.role] : 'Dashboard'}
-            </p>
-            <h1 className="mt-1.5 text-2xl font-semibold tracking-[-0.02em] text-body">
-              {firstName ? `Welcome back, ${firstName}` : 'Overview'}
-            </h1>
-            <p className="mt-1 text-sm text-muted">
-              {cards ? `Figures as at ${formatDateTime(cards.generatedAt)}` : 'Loading your figures…'}
-            </p>
-          </div>
-          <Button variant="subtle" onClick={reload}>
-            Refresh
-          </Button>
-        </div>
-      </header>
-
       {loading && !cards && <Spinner label="Loading your figures" className="py-16" />}
 
       {error && (
@@ -229,11 +201,44 @@ export default function Overview() {
         </div>
       )}
 
-      {/* --- the four that lead --- */}
-      {headlines.length > 0 && (
+      {/*
+        * --- the headline, and the two things that need a person today ---
+        *
+        * The reference gives its hero card roughly half the row and stacks two emphasis
+        * cards beside it. Same proportions here, because the same thing is true of the
+        * content: one figure describes the work, and two describe what is slipping.
+        */}
+      {cards && (
+        <div className="grid gap-4 lg:grid-cols-3">
+          <HeroCard
+            className="lg:col-span-2"
+            name={user?.name}
+            role={user?.role}
+            headline={byKey(HERO_KEY)}
+            supporting={byKey(HERO_SUPPORTING_KEY)}
+            generatedAt={cards.generatedAt}
+          />
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+            {emphasis.map((card) => (
+              <KpiCard key={card.key} card={card} series={headlineSeries ?? []} />
+            ))}
+            {emphasis.length === 0 && (
+              // Absent rather than zeroed: a role without casework cannot see a caseload,
+              // and "0 overdue" would be a claim about one.
+              <p className="rounded-xl border border-line bg-surface p-5 text-sm text-muted">
+                Your role does not include casework, so nothing is queued for you here.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* --- the four supporting figures --- */}
+      {tiles.length > 0 && (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {headlines.map((card) => (
-            <KpiCard key={card.key} card={card} series={headlineSeries ?? []} />
+          {tiles.map((tile) => (
+            <StatTile key={tile.key} card={tile.card!} icon={tile.icon} tone={tile.tone} />
           ))}
         </div>
       )}
@@ -274,15 +279,6 @@ export default function Overview() {
               />
             </div>
           </Panel>
-        </div>
-      )}
-
-      {/* --- the secondary figures --- */}
-      {tiles.length > 0 && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-          {tiles.map((tile) => (
-            <StatTile key={tile.key} card={tile.card!} icon={tile.icon} tone={tile.tone} />
-          ))}
         </div>
       )}
 

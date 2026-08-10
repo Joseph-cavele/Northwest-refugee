@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { startOfDaySAST, startOfMonthSAST, sastDayRange } from '../src/utils/dates.js';
-import { METRICS, METRIC_KEYS } from '../src/modules/reports/metric.model.js';
+import { startOfDaySAST, startOfMonthSAST, sastDayRange } from '../src/server/utils/dates.js';
+import { METRICS, METRIC_KEYS } from '../src/server/modules/reports/metric.model.js';
 
 // No database needed: these are the pure pieces the reporting module is built on, and the
 // day boundary is the one most likely to be quietly wrong for two hours every night.

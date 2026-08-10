@@ -1,8 +1,22 @@
-# Tests — awaiting a port
+# Tests
 
-**These do not run yet.** They are the Express-era suite, preserved verbatim from
-`Backend/tests/` when that tree was deleted. Every route test is built on `supertest`
-against the Express `app` object, which no longer exists:
+`npm test` runs what is ported. `vitest.config.ts` lists those files by name, so adding a
+suite means adding it there — an excluded test is visible debt, a silently skipped one is not.
+
+## Running now — 47 tests
+
+| Suite | What it protects |
+|---|---|
+| `series.unit.test.ts` | The chart arithmetic: a STOCK is never summed across days, a FLOW is never compared against an unequal window, and a ratio against zero is undefined rather than "+100%". |
+| `alerts.unit.test.ts` | That an alert cannot reach a role whose cards it never received, and that severity comes from the share rather than the count. |
+| `reportDates.test.js` | SAST day boundaries, and that no metric is broken down by an axis that could identify a person. |
+| `jobs.test.js` | The three scheduled jobs, every collaborator mocked. |
+
+## Still to port — 23 route suites
+
+The rest are the Express-era suite, preserved verbatim from `Backend/tests/` when that tree
+was deleted. Every one is built on `supertest` against the Express `app` object, which no
+longer exists:
 
 ```js
 import app from '../src/app.js';          // gone
@@ -12,14 +26,6 @@ const res = await request(app).get(base); // gone with it
 They are kept rather than deleted because they are the only written record of the
 behaviours this system is not allowed to lose, and re-deriving them from the services
 would be slower and less complete than adapting them.
-
-## What runs today, unchanged
-
-Two files need no Express at all and can be moved into the suite as soon as a runner is
-configured — they exercise pure functions and a mocked module graph:
-
-- `reportDates.test.js` — SAST day boundaries and the metric vocabulary
-- `jobs.test.js` — the three scheduled jobs, with every collaborator mocked
 
 ## Porting the rest
 

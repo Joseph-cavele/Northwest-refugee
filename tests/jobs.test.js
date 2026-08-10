@@ -5,27 +5,27 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // mocked here so the scheduling rules themselves — which day a reminder goes out, who is
 // told what — are exercised without a database.
 
-vi.mock('../src/modules/beneficiaries/beneficiary.service.js', () => ({
+vi.mock('../src/server/modules/beneficiaries/beneficiary.service.js', () => ({
   findExpiringPermits: vi.fn(),
 }));
-vi.mock('../src/modules/whatsapp/whatsapp.client.js', () => ({
+vi.mock('../src/server/modules/whatsapp/whatsapp.client.js', () => ({
   isWhatsAppConfigured: vi.fn(() => true),
   sendMessage: vi.fn(async () => true),
 }));
-vi.mock('../src/modules/notifications/notification.service.js', () => ({
+vi.mock('../src/server/modules/notifications/notification.service.js', () => ({
   notify: vi.fn(async () => ({})),
   notifyPermission: vi.fn(async () => []),
 }));
-vi.mock('../src/modules/serviceRequests/serviceRequest.service.js', () => ({
+vi.mock('../src/server/modules/serviceRequests/serviceRequest.service.js', () => ({
   findOverdue: vi.fn(async () => []),
 }));
-vi.mock('../src/modules/cases/case.service.js', () => ({
+vi.mock('../src/server/modules/cases/case.service.js', () => ({
   findEscalated: vi.fn(async () => []),
 }));
-vi.mock('../src/modules/referrals/referral.service.js', () => ({
+vi.mock('../src/server/modules/referrals/referral.service.js', () => ({
   findAwaitingFollowUp: vi.fn(async () => []),
 }));
-vi.mock('../src/modules/finance/finance.service.js', () => ({
+vi.mock('../src/server/modules/finance/finance.service.js', () => ({
   findBudgetLinesNearLimit: vi.fn(async () => []),
   findStaleApprovals: vi.fn(async () => []),
   findUnreconciledFloats: vi.fn(async () => []),
@@ -34,23 +34,22 @@ vi.mock('../src/modules/finance/finance.service.js', () => ({
 // collaborator: unmocked it is the one call here that would really reach Mongo, and with
 // no connection each rollup test would sit through the driver's buffering timeout before
 // the job swallowed the error.
-vi.mock('../src/modules/reports/report.service.js', () => ({
+vi.mock('../src/server/modules/reports/report.service.js', () => ({
   snapshotDailyMetrics: vi.fn(async () => ({ date: new Date(), metrics: 0, written: 0 })),
 }));
 
-const { findExpiringPermits } = await import('../src/modules/beneficiaries/beneficiary.service.js');
-const { isWhatsAppConfigured, sendMessage } = await import('../src/modules/whatsapp/whatsapp.client.js');
-const { notify, notifyPermission } = await import('../src/modules/notifications/notification.service.js');
-const { findOverdue } = await import('../src/modules/serviceRequests/serviceRequest.service.js');
-const { findEscalated } = await import('../src/modules/cases/case.service.js');
-const { findAwaitingFollowUp } = await import('../src/modules/referrals/referral.service.js');
-const finance = await import('../src/modules/finance/finance.service.js');
-const { snapshotDailyMetrics } = await import('../src/modules/reports/report.service.js');
+const { findExpiringPermits } = await import('../src/server/modules/beneficiaries/beneficiary.service.js');
+const { isWhatsAppConfigured, sendMessage } = await import('../src/server/modules/whatsapp/whatsapp.client.js');
+const { notify, notifyPermission } = await import('../src/server/modules/notifications/notification.service.js');
+const { findOverdue } = await import('../src/server/modules/serviceRequests/serviceRequest.service.js');
+const { findEscalated } = await import('../src/server/modules/cases/case.service.js');
+const { findAwaitingFollowUp } = await import('../src/server/modules/referrals/referral.service.js');
+const finance = await import('../src/server/modules/finance/finance.service.js');
+const { snapshotDailyMetrics } = await import('../src/server/modules/reports/report.service.js');
 
-const { runPermitExpiry } = await import('../src/jobs/permitExpiry.job.js');
-const { runDailyRollup } = await import('../src/jobs/dailyRollup.job.js');
-const { runFinanceAlerts } = await import('../src/jobs/financeAlerts.job.js');
-const { startJobs, stopJobs } = await import('../src/jobs/index.js');
+const { runPermitExpiry } = await import('../src/server/jobs/permitExpiry.job.js');
+const { runDailyRollup } = await import('../src/server/jobs/dailyRollup.job.js');
+const { runFinanceAlerts } = await import('../src/server/jobs/financeAlerts.job.js');
 
 // clearAllMocks() clears the call log but keeps implementations, so every finder is reset
 // to "nothing found" here. Without it one test's fixture is still returned in the next,
@@ -80,12 +79,13 @@ const person = (overrides = {}) => ({
   ...overrides,
 });
 
-describe('the scheduler', () => {
-  it('schedules all three jobs with valid expressions', () => {
-    expect(startJobs()).toBe(3);
-    stopJobs();
-  });
-});
+/*
+ * The scheduler's own test is gone, not skipped. jobs/index.js was the node-cron wiring,
+ * and node-cron cannot hold a timer in a Next runtime that has no process between
+ * requests. The three job FUNCTIONS below are unchanged and still tested; what schedules
+ * them is now vercel.json plus the guard on /api/v1/cron/[job], which is configuration and
+ * an HTTP handler rather than anything this file could assert against.
+ */
 
 describe('permit expiry', () => {
   it('does nothing when no permit is close to expiring', async () => {

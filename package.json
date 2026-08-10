@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "seed": "node src/server/seed.js"
+    "seed": "node src/server/seed.js",
+    "seed:demo": "node src/server/demo.js"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.3.3",

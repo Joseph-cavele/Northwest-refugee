@@ -198,6 +198,25 @@ they never did under `npm run dev` on Express:
   recover locally. Use `npm run dev` when you need the link.
 - **Error responses omit the stack.** Also correct, also surprising when debugging.
 
+## Demo data
+
+`npm run seed:demo` fills the register, the casework queues, fundraising and 46 days of
+daily metrics, so the dashboard can be reviewed before the organisation has been using the
+system for a month. `npm run seed:demo -- --purge` removes exactly what it created.
+
+Three properties make that safe against a live database, and none of them is optional:
+
+- **Marked.** Every demo beneficiary’s surname ends in `(demo)`, so it is visible in the
+  register, the topbar search and every table. A demo record that reads as real is a
+  data-quality incident waiting to be exported into a report.
+- **Purgeable.** Every `_id` written is recorded in a `demoseeds` manifest, and purge
+  deletes by id — it never guesses by name.
+- **Refused in production.** The script throws when `NODE_ENV=production`.
+
+The daily metrics are **derived** from the records the same run created, not generated
+independently, so the charts agree with the tables beside them. A demo where those two
+disagree teaches the reviewer to distrust both.
+
 ## Known gaps
 
 - **`ENCRYPTION_KEY` is not set in `.env`.** `utils/encrypt.js` throws on first use, so

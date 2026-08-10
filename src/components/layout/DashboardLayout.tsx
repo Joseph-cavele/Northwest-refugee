@@ -25,6 +25,16 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
    */
   const [navOpen, setNavOpen] = useState(false);
 
+  /*
+   * The permanent rail, collapsed to icons.
+   *
+   * Not persisted. Storing it would mean either localStorage — which an eslint rule blocks
+   * on this codebase, for the access token's sake — or a round trip to save a preference
+   * nobody has asked for yet. It resets on reload, which is the honest default until there
+   * is somewhere on the user record to keep it.
+   */
+  const [collapsed, setCollapsed] = useState(false);
+
   return (
     <div className="min-h-screen bg-canvas">
       {/*
@@ -37,8 +47,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       </a>
 
       <div className="flex">
-        <div className="fixed inset-y-0 left-0 hidden lg:block">
-          <Sidebar />
+        <div className="fixed inset-y-0 left-0 z-10 hidden lg:block">
+          <Sidebar collapsed={collapsed} />
         </div>
 
         {navOpen && (
@@ -60,8 +70,20 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </div>
         )}
 
-        <div className="flex min-h-screen w-full flex-col lg:pl-sidebar">
-          <TopBar onOpenNav={() => setNavOpen(true)} />
+        {/*
+          * The content's left inset tracks the rail's width. Both sides animate over the
+          * same duration, so the page does not appear to lag behind the nav.
+          */}
+        <div
+          className={`flex min-h-screen w-full flex-col transition-[padding] duration-200 motion-reduce:transition-none ${
+            collapsed ? 'lg:pl-16' : 'lg:pl-sidebar'
+          }`}
+        >
+          <TopBar
+            onOpenNav={() => setNavOpen(true)}
+            onToggleCollapse={() => setCollapsed((open) => !open)}
+            collapsed={collapsed}
+          />
           <main id="main" className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
             <div className="mx-auto w-full max-w-content">
               {children}

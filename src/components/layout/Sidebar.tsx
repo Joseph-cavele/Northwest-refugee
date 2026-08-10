@@ -41,10 +41,12 @@ const NAV: NavItem[] = [
 export interface SidebarProps {
   /** Closes the drawer after a tap on small screens, where the nav overlays the page. */
   onNavigate?: () => void;
+  /** Icon-only rail. The labels go, the targets and the order do not. */
+  collapsed?: boolean;
   className?: string;
 }
 
-export function Sidebar({ onNavigate, className }: SidebarProps) {
+export function Sidebar({ onNavigate, collapsed = false, className }: SidebarProps) {
   const { can } = useAuth();
   const pathname = usePathname() ?? '';
   const visible = NAV.filter((item) => !item.permission || can(item.permission));
@@ -52,17 +54,32 @@ export function Sidebar({ onNavigate, className }: SidebarProps) {
   return (
     <nav
       aria-label="Main"
-      className={cn('flex h-full w-sidebar flex-col border-r border-line bg-surface', className)}
+      className={cn(
+        'flex h-full flex-col border-r border-line bg-surface transition-[width] duration-200 motion-reduce:transition-none',
+        collapsed ? 'w-16' : 'w-sidebar',
+        className
+      )}
     >
-      <div className="flex flex-col gap-3 border-b border-line px-5 py-5">
+      <div
+        className={cn(
+          'flex flex-col gap-3 border-b border-line py-5',
+          collapsed ? 'items-center px-2' : 'px-5'
+        )}
+      >
         <div className="flex items-center gap-3">
           <Logo size={36} decorative />
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-body">{ORG.shortName}</p>
-            <p className="truncate text-xs text-subtle">{ORG.city}</p>
-          </div>
+          {/*
+            * The mark stays at every width. It is the one thing that says which system this
+            * is, and a rail with no identity is just a column of grey glyphs.
+            */}
+          {!collapsed && (
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-body">{ORG.shortName}</p>
+              <p className="truncate text-xs text-subtle">{ORG.city}</p>
+            </div>
+          )}
         </div>
-        <BrandRule />
+        {!collapsed && <BrandRule />}
       </div>
 
       <ul className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
@@ -86,15 +103,20 @@ export function Sidebar({ onNavigate, className }: SidebarProps) {
                 // The blue is only a visual echo of it, and colour is never the sole
                 // signal for anything in this interface.
                 aria-current={isActive ? 'page' : undefined}
+                // The label is what the item IS, so when it is hidden it becomes the
+                // accessible name and the native tooltip rather than simply disappearing.
+                title={collapsed ? item.label : undefined}
+                aria-label={collapsed ? item.label : undefined}
                 className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
+                  'flex items-center rounded-lg text-sm transition-colors',
+                  collapsed ? 'justify-center px-0 py-2.5' : 'gap-3 px-3 py-2',
                   isActive
                     ? 'bg-brand-50 font-semibold text-brand-700'
                     : 'text-muted hover:bg-ink-50 hover:text-body'
                 )}
               >
                 <item.icon className="size-4 shrink-0" aria-hidden="true" />
-                <span className="truncate">{item.label}</span>
+                {!collapsed && <span className="truncate">{item.label}</span>}
                 {isActive && <span className="sr-only">(current page)</span>}
               </Link>
             </li>
@@ -102,9 +124,13 @@ export function Sidebar({ onNavigate, className }: SidebarProps) {
         })}
       </ul>
 
-      <p className="border-t border-line px-5 py-4 text-xs leading-relaxed text-subtle">
-        {ORG.tagline}
-      </p>
+      {/* The tagline is the first thing to go: it is the least load-bearing text here, and
+          wrapping it into a 4rem rail would make the rail taller than the screen. */}
+      {!collapsed && (
+        <p className="border-t border-line px-5 py-4 text-xs leading-relaxed text-subtle">
+          {ORG.tagline}
+        </p>
+      )}
     </nav>
   );
 }

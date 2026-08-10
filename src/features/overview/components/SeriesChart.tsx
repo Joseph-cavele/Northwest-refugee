@@ -87,7 +87,19 @@ export function SeriesChart({
 
   const dates = series[0]?.points ?? [];
   const slot = plot.w / Math.max(length, 1);
-  const barW = Math.max((slot * 0.62) / series.length, 2);
+
+  /*
+   * Bars fill most of their slot, with a small gap between the group and its neighbours.
+   *
+   * The caller is expected to have bucketed a long daily series into something with few
+   * enough categories to read — see sumIntoWeeks. At forty-odd slots this arithmetic still
+   * produces hairlines, because no width setting rescues that many bars; the fix is fewer
+   * categories, not a thicker stroke.
+   */
+  const GROUP_FILL = 0.78;
+  const BAR_GAP = 3;
+  const barW = Math.max((slot * GROUP_FILL) / series.length, 3);
+  const groupW = barW * series.length;
 
   return (
     <div className={cn('w-full', className)}>
@@ -139,12 +151,14 @@ export function SeriesChart({
                 s.points.map((p, i) => (
                   <rect
                     key={`${s.key}-${p.date}`}
-                    x={xOf(i) - (barW * series.length) / 2 + si * barW + (si > 0 ? 2 : 0)}
+                    x={xOf(i) - groupW / 2 + si * barW}
                     y={yOf(p.value)}
-                    width={Math.max(barW - 2, 1)}
+                    // The gap comes out of the bar, not out of the group, so the pair stays
+                    // centred on its tick however many series there are.
+                    width={Math.max(barW - BAR_GAP, 2)}
                     height={Math.max(PAD.top + plot.h - yOf(p.value), 0)}
-                    // 4px rounded data-ends, anchored to the baseline.
-                    rx="2"
+                    // Rounded data-ends, anchored to the baseline.
+                    rx="3"
                     fill={COLOURS[si % COLOURS.length]}
                     opacity={hover === null || hover === i ? 1 : 0.45}
                   />

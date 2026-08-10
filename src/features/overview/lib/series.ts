@@ -21,6 +21,49 @@ export function toPoints(rows: MetricRow[], key: string): Point[] {
     .map((row) => ({ date: row.date, value: row.value }));
 }
 
+/*
+ * SAST is UTC+2 all year — no daylight saving since 1944 — so shifting by two hours lets
+ * the UTC getters read the South African wall clock. The same trick as utils/dates.js on
+ * the server, and the reason a day boundary here never drifts.
+ */
+const SAST_OFFSET_MS = 2 * 60 * 60 * 1000;
+
+/**
+ * Sum daily points into calendar weeks, Monday first.
+ *
+ * ONLY EVER VALID FOR A FLOW. A flow is an amount over a period, so a week is the sum of
+ * its days — that is what the word means. A STOCK is a level at a moment, and adding seven
+ * days of "open cases" produces a number roughly seven times larger than anything that was
+ * ever true. The caller checks `kind`; this function cannot, so it says so here.
+ *
+ * WHY BUCKET AT ALL: forty-six daily slots in a grouped bar chart gives each bar about
+ * three pixels, which is a texture rather than a comparison. Seven weekly bars are legible,
+ * and a week is also the unit a supervisor actually reasons in.
+ */
+export function sumIntoWeeks(points: Point[]): Point[] {
+  const weeks = new Map<string, number>();
+
+  for (const point of points) {
+    const date = new Date(point.date);
+    if (Number.isNaN(date.getTime())) continue;
+
+    const wall = new Date(date.getTime() + SAST_OFFSET_MS);
+    // getUTCDay(): 0 is Sunday. Shift so Monday starts the week, which is how a South
+    // African working week is counted.
+    const dayOfWeek = (wall.getUTCDay() + 6) % 7;
+    const monday = new Date(wall.getTime() - dayOfWeek * 86_400_000);
+    const key = new Date(
+      Date.UTC(monday.getUTCFullYear(), monday.getUTCMonth(), monday.getUTCDate()) - SAST_OFFSET_MS
+    ).toISOString();
+
+    weeks.set(key, (weeks.get(key) ?? 0) + point.value);
+  }
+
+  return [...weeks.entries()]
+    .map(([date, value]) => ({ date, value }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
 export interface Delta {
   /** Signed change, in the metric's own unit. */
   change: number;

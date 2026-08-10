@@ -21,7 +21,7 @@ import { PillarBars } from './components/PillarBars';
 import { RatioGauge } from './components/RatioGauge';
 import { RecentCases } from './components/RecentCases';
 import { UrgentQueue } from './components/UrgentQueue';
-import { toPoints } from './lib/series';
+import { sumIntoWeeks, toPoints } from './lib/series';
 
 /*
  * The screen every role lands on after signing in.
@@ -284,16 +284,34 @@ export default function Overview() {
           <Panel
             className="xl:col-span-2"
             title="Intake and completion"
-            subtitle="People registered against cases closed — both counts, both per day"
+            subtitle="People registered against cases closed, by week"
           >
             <div className="p-4">
+              {/*
+                * Summed into weeks, not drawn per day. Forty-six daily slots gave each bar
+                * about three pixels — a texture rather than a comparison.
+                *
+                * The sum is legitimate because BOTH of these are FLOW metrics: an amount
+                * over a period, so a week really is the total of its days. The chart below
+                * it plots levels and is deliberately left daily, because adding seven days
+                * of "open cases" would produce a number seven times larger than anything
+                * that was ever true.
+                */}
               <SeriesChart
                 variant="bars"
                 unit="COUNT"
                 empty={<AwaitingSnapshot />}
                 series={[
-                  { key: 'registered', label: 'Registered', points: toPoints(throughput ?? [], 'beneficiaries.registered') },
-                  { key: 'closed', label: 'Cases closed', points: toPoints(throughput ?? [], 'cases.closed') },
+                  {
+                    key: 'registered',
+                    label: 'Registered',
+                    points: sumIntoWeeks(toPoints(throughput ?? [], 'beneficiaries.registered')),
+                  },
+                  {
+                    key: 'closed',
+                    label: 'Cases closed',
+                    points: sumIntoWeeks(toPoints(throughput ?? [], 'cases.closed')),
+                  },
                 ]}
               />
             </div>

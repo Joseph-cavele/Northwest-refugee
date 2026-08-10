@@ -372,7 +372,19 @@ export default function Overview() {
 
       {/* --- the register itself --- */}
       {mayReadCases && (
-        <Panel title="Recently opened cases" subtitle="The eight most recent files you can open">
+        <Panel
+          title="Recently opened cases"
+          /*
+           * "you can open" is not filler. These rows are already row-scoped server-side, so
+           * a coordinator's list is their programmes and a volunteer's is what they
+           * captured — saying so stops the count reading as the organisation's total.
+           */
+          subtitle={
+            recentCases && recentCases.length > 0
+              ? `${recentCases.length} most recent — all of them files you can open`
+              : 'Files you can open'
+          }
+        >
           <RecentCases cases={recentCases ?? []} />
         </Panel>
       )}

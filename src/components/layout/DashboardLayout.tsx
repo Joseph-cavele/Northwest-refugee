@@ -60,7 +60,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <button
               type="button"
               onClick={() => setNavOpen(false)}
-              className="absolute inset-0 size-full bg-ink-950/40"
+              // Darker now that the rail itself is the logo's black: a 40% scrim left the
+              // drawer and the dimmed page reading as one unbroken dark mass on a phone.
+              className="absolute inset-0 size-full bg-ink-950/60"
             >
               <span className="sr-only">Close navigation</span>
             </button>

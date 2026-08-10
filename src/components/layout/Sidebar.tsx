@@ -2,11 +2,24 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard } from 'lucide-react';
+import {
+  Banknote,
+  CalendarDays,
+  FileText,
+  GraduationCap,
+  HandCoins,
+  LayoutDashboard,
+  MessagesSquare,
+  ScrollText,
+  Send,
+  ShieldCheck,
+  Users,
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Logo, BrandRule } from '@/components/ui/logo';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/auth/useAuth';
+import { PERMISSIONS } from '@/auth/permissions';
 import type { Permission } from '@/auth/permissions';
 import { PATHS } from '@/lib/paths';
 import { ORG } from '@/lib/site';
@@ -14,28 +27,84 @@ import { ORG } from '@/lib/site';
 /*
  * Primary navigation.
  *
- * ONLY LINKS TO PAGES THAT EXIST. A nav listing every planned module would put ten dead
- * links in front of a caseworker, and the first one they click lands on a 404 — which
- * reads as a broken system rather than an unfinished one. Add an entry in the same
- * commit as the page it points at, not before.
+ * THE RAIL IS THE LOGO'S OWN BLACK, not the reference template's indigo. The mark is a
+ * black rounded square sheltering four figures — `--color-ink-950` is annotated in
+ * globals.css as exactly that square — so the dark rail beside a white workspace is the
+ * shape of the mark rather than a borrowed admin convention. It also does the job a dark
+ * chrome does: it stops the navigation competing with the figures it sits next to.
  *
- * `permission` decides what to RENDER and nothing more. Hiding a link the user's role
- * cannot use keeps the nav honest, but the server re-checks every request behind it, so
- * an item shown by mistake buys an explanation screen, never data.
+ * NO USER BLOCK. The reference puts an avatar, a name and a role at the top of the sidebar.
+ * All three are already in the topbar's account menu, and the same identity twice on one
+ * screen is the duplication that got the notifications panel removed. What is here instead
+ * is the organisation, which the topbar does not carry.
+ *
+ * BUILT AND PLANNED ARE DIFFERENT THINGS, and the difference is visible. Built items are
+ * links. Planned ones are not links at all — they do not navigate, they cannot 404, and
+ * they carry the word "Soon". That is a change of position from "only list pages that
+ * exist", taken because a one-item nav reads as a broken system rather than an early one;
+ * a control that plainly announces it is not ready costs nothing to discover. Delete
+ * PLANNED below and the sidebar goes back to built-only.
  */
 
 interface NavItem {
-  to: string;
   label: string;
   icon: LucideIcon;
-  /** Omitted where every signed-in role may see the page. */
+  /** Omitted where every signed-in role may see it. */
   permission?: Permission;
+}
+
+interface BuiltItem extends NavItem {
+  to: string;
   /** Matches nested paths too. Off for an index route, or it stays active everywhere. */
   end?: boolean;
 }
 
-const NAV: NavItem[] = [
-  { to: PATHS.dashboard, label: 'Overview', icon: LayoutDashboard, end: true },
+interface Section {
+  heading: string;
+  built?: BuiltItem[];
+  planned?: NavItem[];
+}
+
+/*
+ * Grouped the way the organisation is, not the way the database is: a caseworker thinks in
+ * "the people" and "their work", not in collections. Permission decides what to RENDER and
+ * nothing more — the server re-checks every request behind every one of these.
+ */
+const SECTIONS: Section[] = [
+  {
+    heading: 'Today',
+    built: [{ to: PATHS.dashboard, label: 'Overview', icon: LayoutDashboard, end: true }],
+  },
+  {
+    heading: 'People',
+    planned: [
+      { label: 'Beneficiaries', icon: Users, permission: PERMISSIONS.BENEFICIARY_READ },
+      { label: 'Cases', icon: FileText, permission: PERMISSIONS.CASE_READ },
+      { label: 'Service requests', icon: Send, permission: PERMISSIONS.SERVICE_REQUEST_READ },
+      { label: 'Documents', icon: ScrollText, permission: PERMISSIONS.DOCUMENT_READ },
+    ],
+  },
+  {
+    heading: 'Programmes',
+    planned: [
+      { label: 'Programmes', icon: GraduationCap, permission: PERMISSIONS.PROGRAMME_READ },
+      { label: 'Events', icon: CalendarDays, permission: PERMISSIONS.EVENT_READ },
+    ],
+  },
+  {
+    heading: 'Money',
+    planned: [
+      { label: 'Finance', icon: Banknote, permission: PERMISSIONS.BUDGET_READ },
+      { label: 'Fundraising', icon: HandCoins, permission: PERMISSIONS.DONATION_READ },
+    ],
+  },
+  {
+    heading: 'Organisation',
+    planned: [
+      { label: 'Staff board', icon: MessagesSquare, permission: PERMISSIONS.CHATBOARD_READ },
+      { label: 'Audit trail', icon: ShieldCheck, permission: PERMISSIONS.AUDIT_READ },
+    ],
+  },
 ];
 
 export interface SidebarProps {
@@ -49,85 +118,128 @@ export interface SidebarProps {
 export function Sidebar({ onNavigate, collapsed = false, className }: SidebarProps) {
   const { can } = useAuth();
   const pathname = usePathname() ?? '';
-  const visible = NAV.filter((item) => !item.permission || can(item.permission));
+  const allowed = (item: NavItem) => !item.permission || can(item.permission);
+
+  const sections = SECTIONS.map((section) => ({
+    ...section,
+    built: (section.built ?? []).filter(allowed),
+    planned: (section.planned ?? []).filter(allowed),
+  })).filter((section) => section.built.length + section.planned.length > 0);
 
   return (
     <nav
       aria-label="Main"
       className={cn(
-        'flex h-full flex-col border-r border-line bg-surface transition-[width] duration-200 motion-reduce:transition-none',
+        'flex h-full flex-col bg-ink-950 text-white transition-[width] duration-200 motion-reduce:transition-none',
         collapsed ? 'w-16' : 'w-sidebar',
         className
       )}
     >
       <div
         className={cn(
-          'flex flex-col gap-3 border-b border-line py-5',
+          'flex flex-col gap-3 border-b border-white/10 py-5',
           collapsed ? 'items-center px-2' : 'px-5'
         )}
       >
         <div className="flex items-center gap-3">
-          <Logo size={36} decorative />
-          {/*
-            * The mark stays at every width. It is the one thing that says which system this
-            * is, and a rail with no identity is just a column of grey glyphs.
-            */}
+          {/* The mark stays at every width. A rail with no identity is a column of glyphs. */}
+          <Logo size={34} decorative />
           {!collapsed && (
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-body">{ORG.shortName}</p>
-              <p className="truncate text-xs text-subtle">{ORG.city}</p>
+              <p className="truncate text-sm font-semibold text-white">{ORG.shortName}</p>
+              <p className="truncate text-xs text-white/55">{ORG.city}</p>
             </div>
           )}
         </div>
         {!collapsed && <BrandRule />}
       </div>
 
-      <ul className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
-        {visible.map((item) => {
-          /*
-           * NavLink computed this for us and set aria-current itself; next/link does
-           * neither, so the active test is explicit. `end` means "this exact path only" —
-           * without it an index route matches every page beneath it and the whole nav
-           * lights up at once.
-           */
-          const isActive = item.end
-            ? pathname === item.to
-            : pathname === item.to || pathname.startsWith(`${item.to}/`);
+      <div className="flex-1 overflow-y-auto py-3">
+        {sections.map((section) => (
+          <div key={section.heading} className="mb-1 px-3">
+            {/* Headings are structure, not decoration: they name how the work divides up.
+                In the rail they would be four letters of nothing, so they go. */}
+            {!collapsed && (
+              <p className="px-3 pt-3 pb-1.5 text-[0.625rem] font-semibold tracking-[0.12em] text-white/40 uppercase">
+                {section.heading}
+              </p>
+            )}
 
-          return (
-            <li key={item.to}>
-              <Link
-                href={item.to}
-                onClick={onNavigate}
-                // aria-current is what actually tells a screen reader which page this is.
-                // The blue is only a visual echo of it, and colour is never the sole
-                // signal for anything in this interface.
-                aria-current={isActive ? 'page' : undefined}
-                // The label is what the item IS, so when it is hidden it becomes the
-                // accessible name and the native tooltip rather than simply disappearing.
-                title={collapsed ? item.label : undefined}
-                aria-label={collapsed ? item.label : undefined}
-                className={cn(
-                  'flex items-center rounded-lg text-sm transition-colors',
-                  collapsed ? 'justify-center px-0 py-2.5' : 'gap-3 px-3 py-2',
-                  isActive
-                    ? 'bg-brand-50 font-semibold text-brand-700'
-                    : 'text-muted hover:bg-ink-50 hover:text-body'
-                )}
-              >
-                <item.icon className="size-4 shrink-0" aria-hidden="true" />
-                {!collapsed && <span className="truncate">{item.label}</span>}
-                {isActive && <span className="sr-only">(current page)</span>}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+            <ul className="flex flex-col gap-0.5">
+              {section.built.map((item) => {
+                const isActive = item.end
+                  ? pathname === item.to
+                  : pathname === item.to || pathname.startsWith(`${item.to}/`);
 
-      {/* The tagline is the first thing to go: it is the least load-bearing text here, and
-          wrapping it into a 4rem rail would make the rail taller than the screen. */}
+                return (
+                  <li key={item.label}>
+                    <Link
+                      href={item.to}
+                      onClick={onNavigate}
+                      // aria-current is what tells a screen reader which page this is. The
+                      // fill is only a visual echo — colour is never the sole signal here.
+                      aria-current={isActive ? 'page' : undefined}
+                      title={collapsed ? item.label : undefined}
+                      aria-label={collapsed ? item.label : undefined}
+                      className={cn(
+                        'flex items-center rounded-lg text-sm transition-colors',
+                        collapsed ? 'justify-center px-0 py-2.5' : 'gap-3 px-3 py-2',
+                        isActive
+                          // White on brand-500 is 7.3:1. Of the logo's four colours it is
+                          // the only one that carries white text at all.
+                          ? 'bg-brand-500 font-semibold text-white'
+                          : 'text-white/70 hover:bg-white/10 hover:text-white'
+                      )}
+                    >
+                      <item.icon className="size-4 shrink-0" aria-hidden="true" />
+                      {!collapsed && <span className="truncate">{item.label}</span>}
+                      {isActive && <span className="sr-only">(current page)</span>}
+                    </Link>
+                  </li>
+                );
+              })}
+
+              {section.planned.map((item) => (
+                <li key={item.label}>
+                  {/*
+                    * Not a link, and not a button. There is nothing to navigate to and
+                    * nothing to press, so it is text — which is also why it never 404s and
+                    * never appears in the tab order to be pressed by mistake.
+                    */}
+                  <p
+                    title={collapsed ? `${item.label} — not built yet` : undefined}
+                    /*
+                     * white/50 over black is roughly 5.3:1 — dim enough to sit behind the
+                     * built items, still AA at this size. The 35% that reads "obviously
+                     * inactive" is about 3.5:1, and these are informational text rather
+                     * than disabled controls, so they do not get that exemption.
+                     */
+                    className={cn(
+                      'flex items-center rounded-lg text-sm text-white/50',
+                      collapsed ? 'justify-center px-0 py-2.5' : 'gap-3 px-3 py-2'
+                    )}
+                  >
+                    <item.icon className="size-4 shrink-0" aria-hidden="true" />
+                    {!collapsed && (
+                      <>
+                        <span className="truncate">{item.label}</span>
+                        {/* The state in a word. Dimmed text alone reads as a bug. */}
+                        <span className="ml-auto shrink-0 rounded-full bg-white/10 px-1.5 py-0.5 text-[0.625rem] font-semibold tracking-wide text-white/65 uppercase">
+                          Soon
+                        </span>
+                      </>
+                    )}
+                    <span className="sr-only">Not built yet</span>
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+
       {!collapsed && (
-        <p className="border-t border-line px-5 py-4 text-xs leading-relaxed text-subtle">
+        <p className="border-t border-white/10 px-5 py-4 text-xs leading-relaxed text-white/45">
           {ORG.tagline}
         </p>
       )}

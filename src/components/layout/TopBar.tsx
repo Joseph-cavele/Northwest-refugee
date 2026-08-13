@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Bell, LogOut, Menu, PanelLeftClose, PanelLeftOpen, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -10,7 +11,7 @@ import { PERMISSIONS } from '@/auth/permissions';
 import { PATHS } from '@/lib/paths';
 import { ROLE_LABELS } from '@/types/enums';
 import { listNotifications, unreadCount } from '@/api/notifications.api';
-import { NotificationsPanel } from '@/features/overview/components/NotificationsPanel';
+import { NotificationsPanel } from '@/features/notifications/NotificationsPanel';
 import { TopBarSearch } from './TopBarSearch';
 import { FullscreenToggle } from './FullscreenToggle';
 
@@ -56,8 +57,12 @@ export function TopBar({ onOpenNav, onToggleCollapse, collapsed = false, title }
 
   // Notifications are always the caller's own, so this needs no permission.
   const { data: unread } = useApi(useCallback((signal: AbortSignal) => unreadCount(signal), []));
+  // The endpoint is paginated; the dropdown wants the rows, not the totals.
   const { data: notifications } = useApi(
-    useCallback((signal: AbortSignal) => listNotifications({ limit: 6 }, signal), [])
+    useCallback(
+      (signal: AbortSignal) => listNotifications({ limit: 6 }, signal).then((page) => page.data),
+      []
+    )
   );
 
   useEffect(() => {
@@ -146,8 +151,12 @@ export function TopBar({ onOpenNav, onToggleCollapse, collapsed = false, title }
 
         {/*
           * The bell OPENS something. A badge counting unread work above a button that does
-          * nothing tells a person there is work and then refuses to show it — and there is
-          * no notifications page to send them to yet, so the list lives here.
+          * nothing tells a person there is work and then refuses to show it.
+          *
+          * The panel shows the most recent few and ends in a way through to the full list,
+          * where they can be cleared. It deliberately does NOT mark anything read itself:
+          * glancing at a dropdown is not reading, and a bell that empties because somebody
+          * opened it is a bell that has lost the thing it was counting.
           */}
         <div ref={bellRef} className="relative">
           <button
@@ -181,6 +190,13 @@ export function TopBar({ onOpenNav, onToggleCollapse, collapsed = false, title }
               <div className="max-h-96 overflow-y-auto">
                 <NotificationsPanel notifications={notifications ?? []} />
               </div>
+              <Link
+                href="/dashboard/notifications"
+                onClick={() => setBellOpen(false)}
+                className="block border-t border-line px-4 py-2.5 text-center text-xs font-semibold text-brand-600 hover:bg-ink-25"
+              >
+                See all notifications
+              </Link>
             </div>
           )}
         </div>

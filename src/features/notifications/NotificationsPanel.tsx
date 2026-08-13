@@ -51,9 +51,16 @@ const PRIORITY_STYLE: Record<NotificationPriority, string> = {
 
 export interface NotificationsPanelProps {
   notifications: NotificationRow[];
+  /**
+   * Marks one read. Optional: the panel is also used where there is nothing to mark —
+   * and a row that looks pressable but is not is worse than one that plainly is not.
+   */
+  onMarkRead?: (id: string) => void;
+  /** Ids currently being marked, so a row can show it is working. */
+  pending?: ReadonlySet<string>;
 }
 
-export function NotificationsPanel({ notifications }: NotificationsPanelProps) {
+export function NotificationsPanel({ notifications, onMarkRead, pending }: NotificationsPanelProps) {
   if (notifications.length === 0) {
     return (
       <p className="px-5 py-8 text-center text-sm text-muted">
@@ -67,6 +74,7 @@ export function NotificationsPanel({ notifications }: NotificationsPanelProps) {
       {notifications.map((row) => {
         const Icon = TYPE_ICON[row.type] ?? Info;
         const escalated = row.priority === 'HIGH' || row.priority === 'URGENT';
+        const busy = pending?.has(row._id) ?? false;
 
         return (
           <li key={row._id} className="flex gap-3 px-5 py-3.5">
@@ -100,11 +108,35 @@ export function NotificationsPanel({ notifications }: NotificationsPanelProps) {
               </p>
             </div>
 
-            {!row.isRead && (
-              <span className="mt-2 size-2 shrink-0 rounded-full bg-brand-500">
-                <span className="sr-only">Unread</span>
-              </span>
-            )}
+            {!row.isRead &&
+              (onMarkRead ? (
+                /*
+                 * The dot became the control rather than gaining one beside it. An unread
+                 * marker that is also how you clear it needs no second affordance, and the
+                 * row stays as narrow as it was.
+                 */
+                <button
+                  type="button"
+                  onClick={() => onMarkRead(row._id)}
+                  disabled={busy}
+                  title="Mark as read"
+                  className="mt-1 grid size-6 shrink-0 place-items-center rounded-full transition-colors hover:bg-ink-100 disabled:opacity-50"
+                >
+                  <span
+                    className={cn(
+                      'size-2 rounded-full bg-brand-500',
+                      busy && 'animate-pulse motion-reduce:animate-none'
+                    )}
+                  />
+                  <span className="sr-only">
+                    {busy ? 'Marking as read' : `Mark "${row.title}" as read`}
+                  </span>
+                </button>
+              ) : (
+                <span className="mt-2 size-2 shrink-0 rounded-full bg-brand-500">
+                  <span className="sr-only">Unread</span>
+                </span>
+              ))}
           </li>
         );
       })}

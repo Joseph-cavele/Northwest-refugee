@@ -1,5 +1,6 @@
 import { api } from './client';
 import type { Id, IsoDate } from '@/types/models';
+import type { Paginated } from '@/types/api';
 import type { NotificationPriority, NotificationType } from '@/types/enums';
 
 /*
@@ -30,13 +31,23 @@ export interface ListNotificationsQuery {
   page?: number;
   limit?: number;
   unreadOnly?: boolean;
+  type?: NotificationType;
+  priority?: NotificationPriority;
+  sort?: 'createdAt' | '-createdAt';
 }
 
+/**
+ * A page of the caller's own notifications.
+ *
+ * Returns the envelope: the route has always answered with `paginated(...)`, and reading it
+ * through `api.get` simply discarded `meta` — so a caller could render rows but could never
+ * say how many there were or offer a second page.
+ */
 export function listNotifications(
   query: ListNotificationsQuery = {},
   signal?: AbortSignal
-): Promise<NotificationRow[]> {
-  return api.get<NotificationRow[]>('/notifications', {
+): Promise<Paginated<NotificationRow>> {
+  return api.list<NotificationRow>('/notifications', {
     query: query as Record<string, string | number | boolean>,
     signal,
   });

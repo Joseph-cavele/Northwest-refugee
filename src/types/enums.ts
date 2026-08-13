@@ -156,6 +156,22 @@ export const BENEFICIARY_STATUS_LABELS: Record<BeneficiaryStatus, string> = {
 };
 
 /**
+ * How consent was obtained, so it can be evidenced to the Information Regulator.
+ *
+ * Mirrors the inline enum on `consentSchema` in beneficiary.model.js rather than
+ * constants.js, which is where the server happens to declare it — noted because a
+ * reader looking for the source of truth will check constants.js first and not find it.
+ */
+export const CONSENT_METHODS = ['WHATSAPP', 'SIGNED_FORM', 'VERBAL_WITNESSED'] as const;
+export type ConsentMethod = (typeof CONSENT_METHODS)[number];
+
+export const CONSENT_METHOD_LABELS: Record<ConsentMethod, string> = {
+  WHATSAPP: 'Agreed on WhatsApp',
+  SIGNED_FORM: 'Signed form',
+  VERBAL_WITNESSED: 'Verbal, witnessed',
+};
+
+/**
  * Held `select: false` server-side and readable only with `beneficiary:read_sensitive`,
  * which writes an audit entry. This list describes the most damaging facts in the
  * system — nothing may render it outside a SensitivePanel.
@@ -176,6 +192,30 @@ export const VULNERABILITY_FLAGS = [
   'STATELESS',
 ] as const;
 export type VulnerabilityFlag = (typeof VULNERABILITY_FLAGS)[number];
+
+/**
+ * Written the way a caseworker would say it aloud to the person sitting opposite them.
+ *
+ * `humanise()` would render GBV_SURVIVOR as "Gbv survivor" and TORTURE_SURVIVOR as
+ * "Torture survivor" — the first is wrong and the second reads as a category rather than
+ * a person. These describe the worst thing that has happened to someone, so they are
+ * spelled out rather than derived.
+ */
+export const VULNERABILITY_FLAG_LABELS: Record<VulnerabilityFlag, string> = {
+  UNACCOMPANIED_MINOR: 'Unaccompanied minor',
+  SEPARATED_CHILD: 'Separated child',
+  GBV_SURVIVOR: 'Survivor of gender-based violence',
+  TRAFFICKING_SURVIVOR: 'Survivor of trafficking',
+  TORTURE_SURVIVOR: 'Survivor of torture',
+  DISABILITY: 'Living with a disability',
+  CHRONIC_ILLNESS: 'Chronic illness',
+  PREGNANT_OR_NURSING: 'Pregnant or nursing',
+  ELDERLY: 'Older person',
+  CHILD_HEADED_HOUSEHOLD: 'Child-headed household',
+  SINGLE_PARENT: 'Single parent',
+  HOMELESS: 'Without shelter',
+  STATELESS: 'Stateless',
+};
 
 // --- casework ---------------------------------------------------------------
 

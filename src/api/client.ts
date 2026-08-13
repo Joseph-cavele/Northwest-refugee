@@ -1,6 +1,6 @@
 import { ApiError } from './errors';
 import { getAccessToken, notifyExpired, setAccessToken } from '@/auth/tokenStore';
-import type { ApiErrorCode } from '@/types/api';
+import type { ApiErrorCode, Paginated, PaginationMeta } from '@/types/api';
 
 /*
  * The one place a request leaves this app.
@@ -28,7 +28,10 @@ const PREFIX = '/api/v1';
 
 export interface RequestOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
-  /** Serialised as JSON. Omit for GET. */
+  /**
+   * Serialised as JSON, unless it is a `FormData` — which is sent as-is, with no
+   * Content-Type of ours. See the note in `send()`. Omit for GET.
+   */
   body?: unknown;
   /** Appended as a query string; null/undefined entries are dropped. */
   query?: Record<string, string | number | boolean | null | undefined>;
@@ -131,6 +134,14 @@ async function send(
 ): Promise<Response> {
   const { method = 'GET', body, query, signal } = options;
 
+  /*
+   * A FormData body goes over untouched, and — critically — WITHOUT a Content-Type of our
+   * own. multipart requires a boundary parameter that only the browser knows, so setting
+   * `multipart/form-data` by hand produces a header with no boundary and a body the server
+   * cannot parse. Leaving the header off entirely is what lets fetch fill it in correctly.
+   */
+  const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+
   try {
     return await fetch(buildUrl(path, query), {
       method,
@@ -142,10 +153,10 @@ async function send(
        */
       credentials: 'include',
       headers: {
-        ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+        ...(body === undefined || isFormData ? {} : { 'Content-Type': 'application/json' }),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+      ...(body === undefined ? {} : { body: isFormData ? body : JSON.stringify(body) }),
     });
   } catch (err) {
     // An aborted request is the caller unmounting, not a failure — let it propagate so
@@ -168,11 +179,54 @@ async function unwrap<T>(res: Response): Promise<T> {
   throw readErrorEnvelope(payload, res.status);
 }
 
-export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+/**
+ * The same, keeping `meta`.
+ *
+ * `unwrap` returns `data` and drops the rest, which is right for the great majority of
+ * calls. A paginated list is the exception: the total and the page count live in `meta`,
+ * and without them a table can show rows but cannot say how many there are or offer a
+ * next page. Anything that renders a pager needs this rather than `get`.
+ */
+async function unwrapWithMeta<T>(res: Response): Promise<Paginated<T>> {
+  const payload: unknown = await res.json().catch(() => null);
+
+  if (res.ok && payload && typeof payload === 'object' && 'data' in payload) {
+    const body = payload as { data: T[]; meta?: PaginationMeta };
+    return {
+      data: body.data,
+      // A route that forgot to paginate still returns rows; describing them as one full
+      // page is truer than crashing the screen that renders them.
+      meta: body.meta ?? {
+        page: 1,
+        limit: body.data?.length ?? 0,
+        total: body.data?.length ?? 0,
+        pages: 1,
+        hasNext: false,
+        hasPrev: false,
+      },
+    };
+  }
+
+  throw readErrorEnvelope(payload, res.status);
+}
+
+/**
+ * Send, and replay once through a refreshed token if the first attempt 401s.
+ *
+ * `finish` decides what a response becomes — the data alone, or the data with its
+ * pagination meta. Extracted so the retry logic has exactly one implementation: two copies
+ * of a single-flight refresh is how the second one ends up presenting an already-rotated
+ * token and signing everybody out.
+ */
+async function sendWithRetry<T>(
+  path: string,
+  options: RequestOptions,
+  finish: (res: Response) => Promise<T>
+): Promise<T> {
   const anonymous = options.anonymous ?? false;
   const res = await send(path, options, anonymous ? null : getAccessToken());
 
-  if (res.status !== 401 || anonymous) return unwrap<T>(res);
+  if (res.status !== 401 || anonymous) return finish(res);
 
   const token = await refreshSession();
   if (!token) {
@@ -182,11 +236,20 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
      * caller awaiting this does not sit on a promise that never settles.
      */
     notifyExpired();
-    return unwrap<T>(res);
+    return finish(res);
   }
 
   setAccessToken(token);
-  return unwrap<T>(await send(path, options, token));
+  return finish(await send(path, options, token));
+}
+
+export function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  return sendWithRetry(path, options, (res) => unwrap<T>(res));
+}
+
+/** A paginated list, with the meta a pager needs. */
+export function requestList<T>(path: string, options: RequestOptions = {}): Promise<Paginated<T>> {
+  return sendWithRetry(path, options, (res) => unwrapWithMeta<T>(res));
 }
 
 export const api = {
@@ -196,4 +259,7 @@ export const api = {
     request<T>(path, { ...options, method: 'POST', body }),
   patch: <T>(path: string, body?: unknown, options?: Omit<RequestOptions, 'method' | 'body'>) =>
     request<T>(path, { ...options, method: 'PATCH', body }),
+  /** For a screen that renders a pager. Everything else should use `get`. */
+  list: <T>(path: string, options?: Omit<RequestOptions, 'method' | 'body'>) =>
+    requestList<T>(path, { ...options, method: 'GET' }),
 };

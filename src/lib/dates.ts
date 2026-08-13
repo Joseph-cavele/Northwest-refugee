@@ -122,11 +122,32 @@ export function formatRelative(value: DateInput): string {
   return dateFmt.format(d);
 }
 
-/** Whole days from now. Negative is in the past — an overdue SLA or an expired permit. */
-export function daysUntil(value: DateInput): number | null {
-  const d = toDate(value);
-  if (!d) return null;
-  return Math.ceil((d.getTime() - Date.now()) / 86_400_000);
+/** The SAST calendar day as an integer, so two dates can simply be subtracted. */
+function sastDayNumber(value: DateInput): number | null {
+  const ymd = toDateInputValue(value);
+  if (!ymd) return null;
+  // Re-parsed as UTC midnight purely to turn a Y-M-D string into a day index.
+  return Math.round(Date.parse(`${ymd}T00:00:00Z`) / 86_400_000);
+}
+
+/**
+ * Whole CALENDAR days from `from` to `value`, in SAST. Negative is in the past — an
+ * overdue SLA or an expired permit.
+ *
+ * Calendar days, not 24-hour blocks, and the distinction is the whole point. A permit
+ * expires ON a date and an SLA falls due ON a date; neither happens 24 hours after the
+ * instant someone opened the screen. Dividing milliseconds answers "0 days" for most of
+ * the final day and can read tomorrow morning as today — which on this system means
+ * telling someone their permit is fine when it lapses in the morning.
+ *
+ * @param from defaults to now. Pass the screen's fixed instant so every row on a page is
+ *   measured against the same moment.
+ */
+export function daysUntil(value: DateInput, from: DateInput = Date.now()): number | null {
+  const target = sastDayNumber(value);
+  const origin = sastDayNumber(from);
+  if (target === null || origin === null) return null;
+  return target - origin;
 }
 
 export function isPast(value: DateInput): boolean {

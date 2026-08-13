@@ -68,6 +68,32 @@ export function humanise(value: string): string {
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
+/**
+ * A file size someone can read: `248 KB`, `1,4 MB`.
+ *
+ * Decimal units, not binary. A scan the operating system calls 1,4 MB must not appear here
+ * as 1,3 MiB — the person checking whether the right file was uploaded is comparing against
+ * what their file manager told them, not against a definition of a megabyte.
+ */
+const SIZE_UNITS = ['bytes', 'KB', 'MB', 'GB'] as const;
+
+export function formatBytes(value: number): string {
+  if (!Number.isFinite(value) || value < 0) return '—';
+  if (value < 1000) return `${value} bytes`;
+
+  let size = value;
+  let unit = 0;
+  while (size >= 1000 && unit < SIZE_UNITS.length - 1) {
+    size /= 1000;
+    unit += 1;
+  }
+  // One decimal below 10 (1,4 MB), none above (248 KB) — precision where it distinguishes.
+  const rendered = new Intl.NumberFormat('en-ZA', {
+    maximumFractionDigits: size < 10 ? 1 : 0,
+  }).format(size);
+  return `${rendered} ${SIZE_UNITS[unit]}`;
+}
+
 /** Trim to a length that fits, breaking on a word rather than mid-syllable. */
 export function truncate(value: string, max: number): string {
   if (value.length <= max) return value;

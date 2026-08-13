@@ -8,7 +8,12 @@ import User from './modules/users/user.model.js';
 import Beneficiary from './modules/beneficiaries/beneficiary.model.js';
 import Case from './modules/cases/case.model.js';
 import ServiceRequest from './modules/serviceRequests/serviceRequest.model.js';
+import Document from './modules/documents/document.model.js';
 import Notification from './modules/notifications/notification.model.js';
+import { Programme, Cohort } from './modules/programmes/programme.model.js';
+import { Event, EventParticipant } from './modules/events/event.model.js';
+import Budget from './modules/finance/budget.model.js';
+import Transaction from './modules/finance/transaction.model.js';
 import { Donor, Campaign, Donation } from './modules/fundraising/fundraising.model.js';
 import Metric, { METRICS } from './modules/reports/metric.model.js';
 
@@ -84,11 +89,38 @@ async function record(manifest, collection, ids) {
 
 // --- create ------------------------------------------------------------------------
 
-async function build() {
+/**
+ * @param manifest owned by the caller, not by this function.
+ *
+ * PURGEABILITY MUST SURVIVE A CRASH. The manifest used to be written in one go at the end,
+ * which meant a run that failed halfway left records in the database that `--purge` could
+ * never find — they were not in any batch, so the only way to remove them would have been
+ * guessing by name, which is exactly what the manifest exists to avoid. The caller now owns
+ * the array and persists whatever reached it, successful run or not.
+ */
+async function build(manifest) {
   const actor = await User.findOne({ role: ROLES.EXECUTIVE_DIRECTOR });
   if (!actor) throw new Error('No Executive Director — run `npm run seed` first.');
 
-  const manifest = [];
+  /*
+   * A second member of staff, so the financial controls can be seen working.
+   *
+   * Maker-checker means the person who raises a transaction can never approve it. With one
+   * account in the database every row on the approvals queue reads "you raised this" and
+   * the approve path is unreachable — which demonstrates half the control and hides the
+   * half anyone wants to look at.
+   *
+   * `invited` with no password hash: this account CANNOT sign in. It exists to be named as
+   * the creator of a record, nothing more. Marked like every other demo row.
+   */
+  const officer = await User.create({
+    name: 'Nomsa Finance Officer (demo)',
+    email: 'demo.finance@nwhr.invalid',
+    role: ROLES.FINANCE_OFFICER,
+    status: 'invited',
+    invitedBy: actor._id,
+  });
+  await record(manifest, 'users', [officer._id]);
 
   // --- people ---
   const beneficiaries = [];
@@ -96,21 +128,68 @@ async function build() {
     const [firstName, surname] = PEOPLE[i];
     const registeredAt = dayAgo(between(0, DAYS));
 
+    /*
+     * Three minors, so the child-protection handling on the record is reachable at all:
+     * the Minor flag on the register, the guardian panel, and the alarm that fires when a
+     * minor has no guardian recorded. The model REFUSES to save a minor without one, which
+     * is itself the rule being demonstrated.
+     */
+    const minor = i >= PEOPLE.length - 3;
+    const dateOfBirth = minor
+      ? new Date(2009 + between(0, 4), between(0, 11), between(1, 28))
+      : new Date(1975 + between(0, 30), between(0, 11), between(1, 28));
+
+    /*
+     * Permits, with two properties the earlier version could not produce.
+     *
+     * AN ISSUE DATE. Without one the record's permit timeline refuses to draw — correctly,
+     * because it would otherwise be inventing the geometry it appears to measure — so the
+     * whole device was invisible.
+     *
+     * SOME THAT HAVE ALREADY LAPSED. Every generated expiry used to be in the future, so
+     * the expired state never appeared: the single most consequential fact about an asylum
+     * seeker's day was the one thing the demo could not show.
+     */
+    const hasPermit = rand() > 0.35;
+    const lapsed = hasPermit && rand() > 0.72;
+    const permitExpiresAt = hasPermit
+      ? lapsed
+        ? dayAgo(between(2, 70))
+        : dayAgo(-between(1, 150))
+      : null;
+    const permitIssuedAt = permitExpiresAt
+      ? new Date(permitExpiresAt.getTime() - between(180, 730) * 86_400_000)
+      : null;
+
     const doc = await Beneficiary.create({
       firstName,
       // The marker. Visible everywhere a name is rendered.
       lastName: `${surname} (demo)`,
       gender: pick(['FEMALE', 'MALE', 'FEMALE', 'MALE', 'OTHER']),
-      dateOfBirth: new Date(1975 + between(0, 30), between(0, 11), between(1, 28)),
+      dateOfBirth,
       nationality: pick(NATIONALITIES),
       languages: [pick(['fr', 'sw', 'en', 'pt', 'so', 'am'])],
       immigration: {
-        status: pick(['ASYLUM_SEEKER', 'REFUGEE', 'UNDOCUMENTED', 'ASYLUM_SEEKER']),
+        status: minor
+          ? 'ASYLUM_SEEKER'
+          : pick(['ASYLUM_SEEKER', 'REFUGEE', 'UNDOCUMENTED', 'ASYLUM_SEEKER']),
         // No permit NUMBER: encrypting one needs ENCRYPTION_KEY, which is optional at boot
-        // and absent here. The expiry date drives the permits-expiring figure and carries
-        // nothing sensitive on its own.
-        permitExpiresAt: rand() > 0.6 ? dayAgo(-between(1, 90)) : null,
+        // and absent here. The dates drive the expiry queue and the record's timeline, and
+        // carry nothing sensitive on their own.
+        permitType: permitExpiresAt ? pick(['Section 22', 'Section 24']) : null,
+        permitIssuedAt,
+        permitExpiresAt,
       },
+      // Required for a minor, and the reason a minor can be seeded at all.
+      guardian: minor
+        ? {
+            fullName: `${pick(['Maria', 'Josephine', 'Agnes', 'Samuel'])} ${surname} (demo)`,
+            relationship: pick(['Mother', 'Father', 'Aunt', 'Grandmother']),
+            phone: `+2783${String(2000000 + i).slice(0, 7)}`,
+            // One placement rather than kin, so the "not a legal guardian" wording appears.
+            isLegalGuardian: i !== PEOPLE.length - 1,
+          }
+        : null,
       contact: { cellphone: `+2782${String(1000000 + i).slice(0, 7)}` },
       consent: { given: true, givenAt: registeredAt, method: 'SIGNED_FORM', policyVersion: '1.0' },
       intakeChannel: pick(['WALK_IN', 'WHATSAPP', 'REFERRAL', 'OUTREACH']),
@@ -186,6 +265,170 @@ async function build() {
   await record(manifest, 'servicerequests', requests.map((r) => r._id));
   log.info({ created: requests.length }, 'service requests');
 
+  /*
+   * --- documents ---------------------------------------------------------------------
+   *
+   * METADATA ONLY. NO BYTES ARE UPLOADED, so opening one of these will 404 at Cloudinary.
+   * That is deliberate and worth knowing before it is reported as a bug: uploading real
+   * files would need live Cloudinary credentials, and inventing an identity document —
+   * even a fake one — is not a thing this script should be putting into a database.
+   *
+   * What these DO exercise is everything up to the fetch: that a scan is listed at all,
+   * that listing and opening are different permissions, and that asking to open one writes
+   * an audit entry naming the reader. That is the part worth reviewing.
+   */
+  const DOC_KINDS = ['ASYLUM_PERMIT', 'PASSPORT', 'BIRTH_CERTIFICATE', 'PROOF_OF_ADDRESS', 'CONSENT_FORM'];
+  const documents = [];
+  for (let i = 0; i < 14; i += 1) {
+    const subject = beneficiaries[i % beneficiaries.length];
+    const kind = DOC_KINDS[i % DOC_KINDS.length];
+    const isImage = kind !== 'CONSENT_FORM';
+    const slug = kind.toLowerCase().replace(/_/g, '-');
+
+    const doc = await Document.create({
+      beneficiary: subject.doc._id,
+      kind,
+      storageKey: `nwhr-demo/${subject.doc._id}-${slug}`,
+      resourceType: isImage ? 'image' : 'raw',
+      format: isImage ? 'jpg' : 'pdf',
+      originalName: `${slug}-${subject.doc.lastName.replace(/[^a-z]/gi, '')}.${isImage ? 'jpg' : 'pdf'}`,
+      mimeType: isImage ? 'image/jpeg' : 'application/pdf',
+      bytes: between(90, 3400) * 1024,
+      // The model holds a unique index on (beneficiary, checksum); a counter keeps these
+      // distinct without pretending to be a real digest of anything.
+      checksum: `demo-checksum-${String(i).padStart(4, '0')}`,
+      uploadedBy: actor._id,
+    });
+    documents.push(doc);
+  }
+  await record(manifest, 'documents', documents.map((d) => d._id));
+  log.info({ created: documents.length }, 'documents (metadata only — no files stored)');
+
+  /*
+   * --- cohorts -----------------------------------------------------------------------
+   *
+   * Against the five pillar programmes the ordinary seed creates. The spread is chosen so
+   * every seat state on the programme screen is reachable, and one of them is the point:
+   *
+   *   RUNNING with thirteen empty places — a cohort with free seats that takes nobody.
+   *   Getting that wrong sends an intake officer to enrol someone who cannot be enrolled,
+   *   and the screen looks perfectly reasonable while doing it.
+   *
+   * OVERSUBSCRIBED is deliberately NOT seeded. A count above capacity means the atomic
+   * seat guard did not hold, and manufacturing one would put a fake integrity failure in
+   * front of a reviewer. It stays covered by unit tests instead.
+   */
+  const programmes = await Programme.find({ deletedAt: null }).sort({ name: 1 }).limit(5).exec();
+  const COHORT_PLAN = [
+    { status: 'OPEN', capacity: 30, taken: 18, startsIn: 21, runs: 60 },
+    { status: 'OPEN', capacity: 20, taken: 20, startsIn: 14, runs: 45 },
+    { status: 'RUNNING', capacity: 25, taken: 12, startsIn: -30, runs: 90 },
+    { status: 'COMPLETED', capacity: 40, taken: 37, startsIn: -210, runs: 120 },
+    { status: 'PLANNED', capacity: 15, taken: 0, startsIn: 45, runs: 30 },
+    { status: 'CANCELLED', capacity: 25, taken: 4, startsIn: -12, runs: 40 },
+  ];
+
+  const cohorts = [];
+  if (programmes.length > 0) {
+    for (let i = 0; i < COHORT_PLAN.length; i += 1) {
+      const plan = COHORT_PLAN[i];
+      const programme = programmes[i % programmes.length];
+      const startDate = dayAgo(-plan.startsIn);
+
+      const doc = await Cohort.create({
+        programme: programme._id,
+        name: `${plan.status === 'COMPLETED' ? 'Autumn' : plan.status === 'RUNNING' ? 'Winter' : 'Spring'} intake ${2026 + (i % 2)} (demo)`,
+        startDate,
+        endDate: new Date(startDate.getTime() + plan.runs * 86_400_000),
+        capacity: plan.capacity,
+        enrolledCount: plan.taken,
+        venue: pick(['NWHR offices, Rustenburg', 'Tlhabane community hall', 'Boitekong clinic hall']),
+        facilitator: actor._id,
+        status: plan.status,
+        createdBy: actor._id,
+        ...(plan.status === 'CANCELLED'
+          ? { cancellationReason: 'DEMO DATA — facilitator unavailable.' }
+          : {}),
+      });
+      cohorts.push(doc);
+    }
+    await record(manifest, 'cohorts', cohorts.map((c) => c._id));
+  }
+  log.info({ created: cohorts.length }, 'cohorts');
+
+  /*
+   * --- events and their registers ------------------------------------------------------
+   *
+   * Turnout against plan is the figure this screen exists for, so the spread covers every
+   * outcome: one that beat its target, one that fell short, one that landed exactly, two
+   * still ahead, and one cancelled.
+   *
+   * Attendance is stored the way the model insists on: counted, never identified. A
+   * community event's attendees have consented to nothing, so a participant row carries a
+   * gender, an age band and whether they had been before — no name, no number, nothing that
+   * could single anybody out.
+   */
+  const EVENT_PLAN = [
+    { title: 'World Refugee Day commemoration (demo)', type: 'COMMEMORATION', daysAgo: 54, expected: 200, actual: 247, status: 'COMPLETED' },
+    { title: 'Documentation clinic, Tlhabane (demo)', type: 'OUTREACH', daysAgo: 26, expected: 120, actual: 86, status: 'COMPLETED' },
+    { title: 'Community dialogue on xenophobia (demo)', type: 'COMMUNITY_DIALOGUE', daysAgo: 12, expected: 80, actual: 80, status: 'COMPLETED' },
+    { title: 'Small business skills workshop (demo)', type: 'TRAINING', daysAgo: -18, expected: 40, actual: 0, status: 'CONFIRMED' },
+    { title: 'Winter clothing drive (demo)', type: 'AWARENESS', daysAgo: -35, expected: 150, actual: 0, status: 'PLANNED' },
+    { title: 'Stakeholder breakfast (demo)', type: 'STAKEHOLDER_MEETING', daysAgo: -5, expected: 25, actual: 0, status: 'CANCELLED' },
+  ];
+
+  // Weighted so the age distribution has a believable shape rather than a flat one — the
+  // bars are there to be read, and eight equal bars say nothing about who walked in.
+  const AGE_WEIGHTS = [
+    ['0-5', 6], ['6-12', 10], ['13-17', 8], ['18-24', 20],
+    ['25-34', 26], ['35-49', 18], ['50-64', 9], ['65+', 3],
+  ];
+  const AGE_POOL = AGE_WEIGHTS.flatMap(([band, weight]) => Array.from({ length: weight }, () => band));
+  const GENDER_POOL = ['FEMALE', 'FEMALE', 'FEMALE', 'MALE', 'MALE', 'OTHER', 'UNDISCLOSED'];
+
+  const events = [];
+  const participantIds = [];
+  for (const plan of EVENT_PLAN) {
+    const startsAt = dayAgo(plan.daysAgo);
+    const event = await Event.create({
+      title: plan.title,
+      description: 'DEMO DATA — not a real event.',
+      type: plan.type,
+      pillar: pick(Object.values(PROGRAMME_PILLARS)),
+      startsAt,
+      endsAt: new Date(startsAt.getTime() + between(2, 6) * 3_600_000),
+      venue: pick(['NWHR offices, Rustenburg', 'Tlhabane community hall', 'Rustenburg civic centre']),
+      status: plan.status,
+      expectedAttendance: plan.expected,
+      recordedAttendance: plan.actual,
+      organiser: actor._id,
+      capturedBy: actor._id,
+      ...(plan.status === 'CANCELLED'
+        ? { cancellationReason: 'DEMO DATA — venue double-booked.' }
+        : {}),
+    });
+    await backdate(Event, event._id, startsAt);
+    events.push(event);
+
+    if (plan.actual > 0) {
+      const rows = Array.from({ length: plan.actual }, () => ({
+        event: event._id,
+        // Null: counted, not identified. The ordinary case at a community event.
+        beneficiary: null,
+        gender: pick(GENDER_POOL),
+        ageBand: pick(AGE_POOL),
+        isFirstTime: rand() > 0.62,
+        recordedBy: actor._id,
+        recordedAt: startsAt,
+      }));
+      const inserted = await EventParticipant.insertMany(rows);
+      participantIds.push(...inserted.map((p) => p._id));
+    }
+  }
+  await record(manifest, 'events', events.map((e) => e._id));
+  await record(manifest, 'eventparticipants', participantIds);
+  log.info({ events: events.length, participants: participantIds.length }, 'events');
+
   // --- fundraising ---
   const donor = await Donor.create({
     name: 'Rustenburg Community Trust (demo)',
@@ -193,41 +436,188 @@ async function build() {
     capturedBy: actor._id,
     notes: 'DEMO DATA — not a real donor.',
   });
+  /*
+   * TARGETS, so the progress bars draw at all — an untargeted campaign correctly reports
+   * "no target set" rather than nothing raised, which meant the device was never seen. The
+   * second campaign is set to be beaten, because a campaign past its target is the best
+   * news the screen has and it should be visible that it says so.
+   */
   const campaign = await Campaign.create({
     name: 'Winter Appeal (demo)',
     description: 'DEMO DATA — not a real campaign.',
     capturedBy: actor._id,
     status: 'ACTIVE',
+    targetCents: 15_000_00,
+    endsAt: dayAgo(-40),
+  });
+  const secondCampaign = await Campaign.create({
+    name: 'Back to School (demo)',
+    description: 'DEMO DATA — not a real campaign.',
+    capturedBy: actor._id,
+    status: 'ACTIVE',
+    targetCents: 4_000_00,
+    endsAt: dayAgo(-12),
   });
   await record(manifest, 'donors', [donor._id]);
-  await record(manifest, 'campaigns', [campaign._id]);
+  await record(manifest, 'campaigns', [campaign._id, secondCampaign._id]);
 
+  /*
+   * Donations across every status that matters, because two rules are invisible otherwise:
+   *
+   *   ONLY SETTLED MONEY COUNTS. A pending gift is a gateway's promise, not funds — so
+   *   some are pending, and the campaign total deliberately excludes them.
+   *
+   *   SETTLING DOES NOT SEND THE RECEIPT. Three settled gifts have their s18A number but no
+   *   `receiptEmailedAt`: donors owed a tax certificate. Three rather than all of them,
+   *   because a panel reporting every gift as unreceipted reads as a broken feature rather
+   *   than a queue somebody should work.
+   */
   const donations = [];
-  for (let i = 0; i < 18; i += 1) {
-    const settledAt = dayAgo(between(0, DAYS));
+  for (let i = 0; i < 22; i += 1) {
+    const receivedAt = dayAgo(between(0, DAYS));
     // Whole rands, in cents. Money is integer cents everywhere in this system.
     const amountCents = between(25, 900) * 10_000;
+    const toSecond = i % 5 === 0;
+
+    // Last three settled gifts carry no delivered receipt — the gap the screen surfaces.
+    const pending = i >= 19;
+    const receiptMissing = !pending && i >= 16;
+    const settledAt = pending ? null : receivedAt;
 
     const doc = await Donation.create({
       donor: donor._id,
-      campaign: campaign._id,
+      campaign: toSecond ? secondCampaign._id : campaign._id,
       amountCents,
       method: pick(['EFT', 'CASH', 'CARD']),
-      status: 'SETTLED',
-      receivedAt: settledAt,
+      status: pending ? 'PENDING' : 'SETTLED',
+      receivedAt,
       settledAt,
+      ...(pending
+        ? {}
+        : {
+            receiptNumber: `S18A-DEMO-${String(1000 + i)}`,
+            receiptEmailedAt: receiptMissing ? null : settledAt,
+          }),
       capturedBy: actor._id,
       notes: 'DEMO DATA — not a real donation.',
     });
-    await backdate(Donation, doc._id, settledAt);
-    donations.push({ doc, settledAt, amountCents });
+    await backdate(Donation, doc._id, receivedAt);
+    donations.push({ doc, settledAt, amountCents, campaign: toSecond ? secondCampaign._id : campaign._id });
   }
   await record(manifest, 'donations', donations.map((d) => d.doc._id));
-  await Campaign.updateOne(
-    { _id: campaign._id },
-    { $inc: { raisedCents: donations.reduce((t, d) => t + d.amountCents, 0) } }
-  );
+
+  // Settled only, per campaign. The counter the screen reads must agree with the rule the
+  // screen states, or the first thing a reviewer does is add up the rows and find it wrong.
+  for (const target of [campaign, secondCampaign]) {
+    const raised = donations
+      .filter((d) => d.settledAt !== null && String(d.campaign) === String(target._id))
+      .reduce((total, d) => total + d.amountCents, 0);
+    await Campaign.updateOne({ _id: target._id }, { $set: { raisedCents: raised } });
+  }
   log.info({ created: donations.length }, 'donations');
+
+  /*
+   * --- finance -------------------------------------------------------------------------
+   *
+   * THE LINE TOTALS ARE DERIVED FROM THE TRANSACTIONS, not typed in beside them. The budget
+   * position screen recomputes each line's spend from the posted entries and flags any line
+   * where the two disagree — so hand-written figures would light up every row as "does not
+   * match the ledger" and the one signal that matters would be lost in six false ones.
+   *
+   * Spend comes from the APPROVED expenses; commitment comes from the ones still awaiting a
+   * decision. That is exactly how the service maintains them.
+   *
+   * One line is deliberately allocated less than it has spent, so the overspent state is
+   * reachable — and it still reconciles, because being over budget and disagreeing with the
+   * ledger are different problems and the screen says so differently.
+   */
+  const TXN_PLAN = [
+    // Posted — these become each line's spentCents.
+    { line: 'OPS-01', cents: 420_000, status: 'APPROVED', by: 'officer', desc: 'Stationery and printer toner', payee: 'Waltons Rustenburg', method: 'EFT' },
+    { line: 'OPS-01', cents: 185_000, status: 'APPROVED', by: 'officer', desc: 'Internet and telephone, June', payee: 'Telkom', method: 'DEBIT_ORDER' },
+    { line: 'PRG-01', cents: 1_250_000, status: 'APPROVED', by: 'officer', desc: 'Legal clinic facilitator fees', payee: 'Adv. M. Sithole', method: 'EFT' },
+    { line: 'PRG-01', cents: 640_000, status: 'APPROVED', by: 'officer', desc: 'Home Affairs transport for clients', payee: 'Rustenburg Taxi Assoc.', method: 'CASH' },
+    { line: 'PRG-02', cents: 2_100_000, status: 'APPROVED', by: 'officer', desc: 'Food parcels, 120 households', payee: 'Shoprite Rustenburg', method: 'EFT' },
+    { line: 'PRG-02', cents: 1_450_000, status: 'APPROVED', by: 'officer', desc: 'Food parcels, winter top-up', payee: 'Shoprite Rustenburg', method: 'EFT' },
+    { line: 'TRN-01', cents: 385_000, status: 'APPROVED', by: 'officer', desc: 'Sewing machine servicing', payee: 'Singer Service Centre', method: 'CARD' },
+
+    // Awaiting a decision — these become each line's committedCents, and are the queue.
+    { line: 'PRG-01', cents: 780_000, status: 'PENDING_APPROVAL', by: 'officer', desc: 'Interpreter fees, Q3', payee: 'Language Bridge SA', method: 'EFT' },
+    { line: 'TRN-01', cents: 210_000, status: 'PENDING_APPROVAL', by: 'officer', desc: 'Training materials for the September cohort', payee: 'CNA Rustenburg', method: 'CARD' },
+    // Raised by the Executive Director, so the maker-checker message is visible to whoever
+    // signs in as them: the one row on the queue they are not allowed to approve.
+    { line: 'OPS-01', cents: 96_000, status: 'PENDING_APPROVAL', by: 'ed', desc: 'Board meeting catering', payee: 'Kloof Deli', method: 'CARD' },
+
+    // The other two outcomes, so the ledger is not all one colour.
+    { line: 'OPS-01', cents: 1_850_000, status: 'REJECTED', by: 'officer', desc: 'Replacement office chairs', payee: 'Makro', method: 'EFT' },
+  ];
+
+  const financeActor = { officer: officer._id, ed: actor._id };
+  const transactions = [];
+  const spentByLine = {};
+  const committedByLine = {};
+
+  for (const plan of TXN_PLAN) {
+    const raisedAt = dayAgo(between(2, DAYS));
+    const posted = plan.status === 'APPROVED';
+
+    const doc = await Transaction.create({
+      type: 'EXPENSE',
+      amountCents: plan.cents,
+      description: `${plan.desc} (demo)`,
+      payee: plan.payee,
+      method: plan.method,
+      budget: null, // set below, once the budget exists
+      budgetLineCode: plan.line,
+      status: plan.status,
+      createdBy: financeActor[plan.by],
+      submittedAt: raisedAt,
+      ...(posted ? { approvedBy: actor._id, approvedAt: raisedAt, postedAt: raisedAt } : {}),
+      ...(plan.status === 'REJECTED'
+        ? { rejectedBy: actor._id, rejectedAt: raisedAt, rejectionReason: 'DEMO DATA — outside this year’s allocation.' }
+        : {}),
+      notes: 'DEMO DATA — not a real transaction.',
+    });
+    await backdate(Transaction, doc._id, raisedAt);
+    transactions.push(doc);
+
+    if (posted) spentByLine[plan.line] = (spentByLine[plan.line] ?? 0) + plan.cents;
+    if (plan.status === 'PENDING_APPROVAL') {
+      committedByLine[plan.line] = (committedByLine[plan.line] ?? 0) + plan.cents;
+    }
+  }
+
+  const LINES = [
+    { code: 'OPS-01', description: 'Office and administration', allocatedCents: 1_500_000 },
+    { code: 'PRG-01', description: 'Legal clinic and documentation', allocatedCents: 3_200_000 },
+    // Allocated below what it has already spent: the overspent state, honestly reconciled.
+    { code: 'PRG-02', description: 'Food assistance', allocatedCents: 3_400_000 },
+    { code: 'TRN-01', description: 'Skills training materials', allocatedCents: 900_000 },
+  ];
+
+  const budget = await Budget.create({
+    name: 'Operations 2026 (demo)',
+    financialYear: 2026,
+    status: 'APPROVED',
+    createdBy: officer._id,
+    submittedAt: dayAgo(DAYS + 10),
+    approvedBy: actor._id,
+    approvedAt: dayAgo(DAYS + 8),
+    lines: LINES.map((line) => ({
+      ...line,
+      spentCents: spentByLine[line.code] ?? 0,
+      committedCents: committedByLine[line.code] ?? 0,
+    })),
+    notes: 'DEMO DATA — not a real budget.',
+  });
+  await Transaction.updateMany(
+    { _id: { $in: transactions.map((t) => t._id) } },
+    { $set: { budget: budget._id } }
+  );
+
+  await record(manifest, 'budgets', [budget._id]);
+  await record(manifest, 'transactions', transactions.map((t) => t._id));
+  log.info({ transactions: transactions.length, lines: LINES.length }, 'finance');
 
   // --- notifications, so the bell has something behind it ---
   const notifications = await Notification.insertMany([
@@ -250,9 +640,21 @@ async function build() {
 
     const entries = [
       { key: 'beneficiaries.registered', value: beneficiaries.filter((b) => b.registeredAt.getTime() >= from && b.registeredAt.getTime() < to).length },
-      { key: 'beneficiaries.active', value: beneficiaries.filter((b) => upTo(b.registeredAt)).length },
+      // Counts the ACTIVE ones, not everyone ever registered. The metric is named for a
+      // status and previously ignored it, so the tile disagreed with the register beside it.
+      { key: 'beneficiaries.active', value: beneficiaries.filter((b) => upTo(b.registeredAt) && b.doc.status === 'ACTIVE').length },
       { key: 'beneficiaries.pending_verification', value: beneficiaries.filter((b) => upTo(b.registeredAt) && b.doc.status === 'PENDING_VERIFICATION').length },
-      { key: 'permits.expiring_30d', value: beneficiaries.filter((b) => upTo(b.registeredAt) && b.doc.immigration?.permitExpiresAt).length },
+      {
+        key: 'permits.expiring_30d',
+        // Within thirty days OF THAT DAY, which is what the name claims. It used to count
+        // every permit on the register, so the figure was the permit count wearing an
+        // expiry label — and it agreed with nothing else on the dashboard.
+        value: beneficiaries.filter((b) => {
+          if (!upTo(b.registeredAt)) return false;
+          const expiry = b.doc.immigration?.permitExpiresAt;
+          return expiry && expiry.getTime() >= from && expiry.getTime() < to + 30 * 86_400_000;
+        }).length,
+      },
 
       { key: 'cases.open', value: cases.filter((c) => upTo(c.openedAt) && !(c.closure?.closedAt && c.closure.closedAt.getTime() < to)).length },
       { key: 'cases.escalated', value: cases.filter((c) => upTo(c.openedAt) && ['HIGH', 'URGENT'].includes(c.priority) && !(c.closure?.closedAt && c.closure.closedAt.getTime() < to)).length },
@@ -262,8 +664,10 @@ async function build() {
       { key: 'service_requests.overdue', value: requests.filter((r) => upTo(r.createdAt) && !(r.resolution?.resolvedAt && r.resolution.resolvedAt.getTime() < to) && r.dueAt && r.dueAt.getTime() < to).length },
       { key: 'service_requests.resolved', value: requests.filter((r) => r.resolution?.resolvedAt && r.resolution.resolvedAt.getTime() >= from && r.resolution.resolvedAt.getTime() < to).length },
 
-      { key: 'donations.settled_count', value: donations.filter((d) => d.settledAt.getTime() >= from && d.settledAt.getTime() < to).length },
-      { key: 'donations.settled_value', value: donations.filter((d) => d.settledAt.getTime() >= from && d.settledAt.getTime() < to).reduce((t, d) => t + d.amountCents, 0) },
+      // `settledAt` is null on a pending gift, which is the whole point of it being
+      // pending: it is a promise from a gateway and is not counted as money anywhere.
+      { key: 'donations.settled_count', value: donations.filter((d) => d.settledAt && d.settledAt.getTime() >= from && d.settledAt.getTime() < to).length },
+      { key: 'donations.settled_value', value: donations.filter((d) => d.settledAt && d.settledAt.getTime() >= from && d.settledAt.getTime() < to).reduce((t, d) => t + d.amountCents, 0) },
     ];
 
     // The pillar breakdown, from the same requests. Every pillar is written, zeros
@@ -284,13 +688,16 @@ async function build() {
   }
   log.info({ days: dates.length }, 'daily metrics derived from the records above');
 
+  return { days: dates.length, dates };
+}
+
+/** Write what was created, so `--purge` can remove exactly it and nothing else. */
+async function persist(manifest, dates) {
   await mongoose.connection.db.collection(MANIFEST).insertOne({
     createdAt: new Date(),
     records: manifest,
     metricDates: dates,
   });
-
-  return { records: manifest.length, days: dates.length };
 }
 
 // --- purge -------------------------------------------------------------------------
@@ -345,11 +752,33 @@ async function main() {
     log.info({ removed, batches }, 'demo data purged');
     console.log(`\n  Removed ${removed} demo records across ${batches} batch(es).\n`);
   } else {
-    const { records, days } = await build();
+    /*
+     * The manifest is persisted in `finally`, so a run that dies partway still leaves
+     * behind a purgeable record of everything it managed to write.
+     */
+    const manifest = [];
+    let days;
+    // Needs a value before the try: the `finally` reads it on the failure path too.
+    let dates = [];
+    try {
+      ({ days, dates } = await build(manifest));
+    } finally {
+      if (manifest.length > 0) await persist(manifest, dates);
+    }
+    const records = manifest.length;
     log.info({ records, days }, 'demo data created');
     console.log(
       `\n  Created ${records} demo records and ${days} days of derived metrics.` +
         `\n  Every beneficiary surname ends in "(demo)".` +
+        `\n` +
+        `\n  Two things worth knowing before you review:` +
+        `\n    · Documents are metadata only — no files were uploaded, so opening one` +
+        `\n      will fail at the storage provider. Everything up to that point works,` +
+        `\n      including the audit entry the request writes.` +
+        `\n    · A second staff account exists so the finance approvals queue has rows` +
+        `\n      somebody other than you raised. It is "invited" with no password and` +
+        `\n      cannot sign in.` +
+        `\n` +
         `\n  Remove it all with:  npm run seed:demo -- --purge\n`
     );
   }

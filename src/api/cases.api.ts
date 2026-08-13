@@ -1,5 +1,6 @@
 import { api } from './client';
 import type { Id, IsoDate } from '@/types/models';
+import type { Paginated } from '@/types/api';
 import type { ServiceCategory, UrgencyLevel } from '@/types/enums';
 
 /*
@@ -58,15 +59,36 @@ export interface ListCasesQuery {
   status?: CaseStatus;
   category?: ServiceCategory;
   priority?: UrgencyLevel;
+  /** Every case ever opened for one person, including closed ones. */
+  beneficiary?: Id;
+  caseworker?: Id;
   /** My caseload, without having to know my own id. */
   mine?: boolean;
+  /** HIGH or URGENT and still workable. A closed case is never urgent. */
+  urgent?: boolean;
   /** Excludes closed files. */
   openOnly?: boolean;
   sort?: 'openedAt' | '-openedAt' | 'priority' | '-priority';
 }
 
-export function listCases(query: ListCasesQuery = {}, signal?: AbortSignal): Promise<CaseRow[]> {
-  return api.get<CaseRow[]>('/cases', { query: query as Record<string, string | number | boolean>, signal });
+/**
+ * A page of cases, with the totals a pager needs.
+ *
+ * Returns the envelope rather than bare rows because `GET /cases` is paginated and always
+ * was — `api.get` simply threw `meta` away, so a caller could render rows but could never
+ * say how many there were or offer a second page.
+ *
+ * Rows are scoped server-side: a volunteer sees only files they captured, a coordinator
+ * only their programmes. A total here is a total of what this user may see.
+ */
+export function listCases(
+  query: ListCasesQuery = {},
+  signal?: AbortSignal
+): Promise<Paginated<CaseRow>> {
+  return api.list<CaseRow>('/cases', {
+    query: query as Record<string, string | number | boolean>,
+    signal,
+  });
 }
 
 /**
@@ -78,8 +100,8 @@ export function listCases(query: ListCasesQuery = {}, signal?: AbortSignal): Pro
 export function listUrgentCases(
   query: ListCasesQuery = {},
   signal?: AbortSignal
-): Promise<CaseRow[]> {
-  return api.get<CaseRow[]>('/cases/urgent', {
+): Promise<Paginated<CaseRow>> {
+  return api.list<CaseRow>('/cases/urgent', {
     query: query as Record<string, string | number | boolean>,
     signal,
   });

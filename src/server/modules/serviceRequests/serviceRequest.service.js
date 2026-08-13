@@ -91,6 +91,18 @@ export async function listServiceRequests(query = {}, actor) {
     page,
     limit,
     sort,
+    /*
+     * The same two references case.service.js populates, with the same narrow selects: a
+     * queue that cannot name who a request is for is a list of reference codes, and the
+     * caller would otherwise fetch each beneficiary separately to caption a row.
+     *
+     * Name and reference code only. A queue does not need — and must not carry — contact
+     * details, dates of birth or immigration status.
+     */
+    populate: [
+      { path: 'beneficiary', select: 'referenceCode firstName lastName status' },
+      { path: 'assignedTo', select: 'name role' },
+    ],
   });
 }
 

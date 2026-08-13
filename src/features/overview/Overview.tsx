@@ -153,11 +153,12 @@ export default function Overview() {
     [mayReadMetrics]
   );
 
+  // Both case endpoints are paginated; these two panels want the rows, not the totals.
   const { data: recentCases } = useApi(
     useCallback(
       (signal: AbortSignal) =>
         mayReadCases
-          ? listCases({ limit: 8, sort: '-openedAt', openOnly: true }, signal)
+          ? listCases({ limit: 8, sort: '-openedAt', openOnly: true }, signal).then((p) => p.data)
           : Promise.resolve([]),
       [mayReadCases]
     ),
@@ -166,7 +167,10 @@ export default function Overview() {
 
   const { data: urgent } = useApi(
     useCallback(
-      (signal: AbortSignal) => (mayReadCases ? listUrgentCases({ limit: 5 }, signal) : Promise.resolve([])),
+      (signal: AbortSignal) =>
+        mayReadCases
+          ? listUrgentCases({ limit: 5 }, signal).then((p) => p.data)
+          : Promise.resolve([]),
       [mayReadCases]
     ),
     [mayReadCases]

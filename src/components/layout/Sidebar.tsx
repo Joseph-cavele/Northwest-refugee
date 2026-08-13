@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   Banknote,
   CalendarDays,
+  FileSpreadsheet,
   FileText,
   GraduationCap,
   HandCoins,
@@ -13,7 +14,9 @@ import {
   ScrollText,
   Send,
   ShieldCheck,
+  UserPlus,
   Users,
+  Wallet,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Logo, BrandRule } from '@/components/ui/logo';
@@ -77,32 +80,112 @@ const SECTIONS: Section[] = [
   },
   {
     heading: 'People',
-    planned: [
-      { label: 'Beneficiaries', icon: Users, permission: PERMISSIONS.BENEFICIARY_READ },
-      { label: 'Cases', icon: FileText, permission: PERMISSIONS.CASE_READ },
-      { label: 'Service requests', icon: Send, permission: PERMISSIONS.SERVICE_REQUEST_READ },
-      { label: 'Documents', icon: ScrollText, permission: PERMISSIONS.DOCUMENT_READ },
+    built: [
+      {
+        to: '/dashboard/beneficiaries',
+        label: 'Beneficiaries',
+        icon: Users,
+        permission: PERMISSIONS.BENEFICIARY_READ,
+      },
+      {
+        to: '/dashboard/cases',
+        label: 'Cases',
+        icon: FileText,
+        permission: PERMISSIONS.CASE_READ,
+      },
+      {
+        to: '/dashboard/service-requests',
+        label: 'Service requests',
+        icon: Send,
+        permission: PERMISSIONS.SERVICE_REQUEST_READ,
+      },
+      {
+        to: '/dashboard/documents',
+        label: 'Documents',
+        icon: ScrollText,
+        // The LIST only. Opening a file needs document:download and happens on the
+        // person's record — see the note at the top of DocumentLibrary.
+        permission: PERMISSIONS.DOCUMENT_READ,
+      },
     ],
   },
   {
     heading: 'Programmes',
-    planned: [
-      { label: 'Programmes', icon: GraduationCap, permission: PERMISSIONS.PROGRAMME_READ },
-      { label: 'Events', icon: CalendarDays, permission: PERMISSIONS.EVENT_READ },
+    built: [
+      {
+        to: '/dashboard/programmes',
+        label: 'Programmes',
+        icon: GraduationCap,
+        permission: PERMISSIONS.PROGRAMME_READ,
+      },
+      {
+        to: '/dashboard/events',
+        label: 'Events',
+        icon: CalendarDays,
+        permission: PERMISSIONS.EVENT_READ,
+      },
     ],
   },
   {
     heading: 'Money',
-    planned: [
-      { label: 'Finance', icon: Banknote, permission: PERMISSIONS.BUDGET_READ },
-      { label: 'Fundraising', icon: HandCoins, permission: PERMISSIONS.DONATION_READ },
+    built: [
+      {
+        to: '/dashboard/finance',
+        label: 'Finance',
+        icon: Banknote,
+        // transaction:read, not budget:read — the ledger and the approvals queue are the
+        // page, and a finance officer holds the first without the second.
+        permission: PERMISSIONS.TRANSACTION_READ,
+        end: true,
+      },
+      {
+        to: '/dashboard/finance/budgets',
+        label: 'Budgets',
+        icon: Wallet,
+        permission: PERMISSIONS.BUDGET_READ,
+      },
+      {
+        to: '/dashboard/finance/overview',
+        label: 'Financial overview',
+        icon: FileSpreadsheet,
+        // transaction:read: the budget and fundraising halves are gated inside the screen,
+        // so nobody is shown a total containing something they may not see.
+        permission: PERMISSIONS.TRANSACTION_READ,
+      },
+      {
+        to: '/dashboard/fundraising',
+        label: 'Fundraising',
+        icon: HandCoins,
+        // campaign:read, not donation:read — a comms officer runs campaigns without ever
+        // seeing who gave what, and the donor-facing panels inside are gated separately.
+        permission: PERMISSIONS.CAMPAIGN_READ,
+      },
     ],
   },
   {
     heading: 'Organisation',
-    planned: [
-      { label: 'Staff board', icon: MessagesSquare, permission: PERMISSIONS.CHATBOARD_READ },
-      { label: 'Audit trail', icon: ShieldCheck, permission: PERMISSIONS.AUDIT_READ },
+    built: [
+      {
+        to: '/dashboard/access-requests',
+        label: 'Access requests',
+        icon: UserPlus,
+        // read, not review — an M&E Officer may see who is waiting without being able to
+        // let anyone in. The decide buttons are gated separately inside the screen.
+        permission: PERMISSIONS.ACCESS_REQUEST_READ,
+      },
+      {
+        to: '/dashboard/staff-board',
+        label: 'Staff board',
+        icon: MessagesSquare,
+        // The outer door only. Which channels appear is decided by membership, server side.
+        permission: PERMISSIONS.CHATBOARD_READ,
+      },
+      {
+        to: '/dashboard/audit',
+        label: 'Audit trail',
+        icon: ShieldCheck,
+        permission: PERMISSIONS.AUDIT_READ,
+      },
     ],
   },
 ];

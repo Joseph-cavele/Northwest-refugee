@@ -30,10 +30,15 @@ export const uploadedFileSchema = z.object({
 export const listDocumentsSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(PAGINATION.MAX_LIMIT).default(PAGINATION.DEFAULT_LIMIT),
-  // Required, not optional. A document is always viewed inside a case file, and asking
-  // for one beneficiary at a time is what lets access be checked exactly — via the
-  // beneficiary service — instead of approximated with a join this layer cannot scope.
-  beneficiary: objectId('beneficiary id'),
+  /*
+   * Optional, and the exactness that once made it required is kept rather than traded away.
+   *
+   * Supplied, it scopes to one case file through the beneficiary service, which 404s an
+   * out-of-scope record before a document is read. Omitted, listDocuments() asks that same
+   * service which records this caller may see and filters to exactly those — no join, no
+   * approximation, and no way for a caller to widen it.
+   */
+  beneficiary: objectId('beneficiary id').optional(),
   kind: z.enum(DOCUMENT_KINDS).optional(),
   sort: z.enum(['createdAt', '-createdAt']).default('-createdAt'),
   includeDeleted: z.coerce.boolean().default(false),

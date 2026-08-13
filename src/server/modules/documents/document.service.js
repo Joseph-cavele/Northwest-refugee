@@ -12,7 +12,11 @@ import * as audit from '../audit/audit.service.js';
 import { ACTIONS } from '../audit/audit.model.js';
 // Cross-module access is service → service. Going straight to the Beneficiary model here
 // would skip its row-level scoping and hand a volunteer every case file's documents.
-import { getBeneficiaryById, setPermitDocument } from '../beneficiaries/beneficiary.service.js';
+import {
+  getBeneficiaryById,
+  setPermitDocument,
+  visibleBeneficiaryIds,
+} from '../beneficiaries/beneficiary.service.js';
 import Document from './document.model.js';
 import { uploadedFileSchema } from './document.schema.js';
 
@@ -161,18 +165,52 @@ export async function uploadDocument({ beneficiary: beneficiaryId, kind }, file,
 
 // --- read -------------------------------------------------------------------------
 
+/**
+ * Documents for one beneficiary, or across every beneficiary the actor may see.
+ *
+ * `beneficiary` USED TO BE REQUIRED, and the reason was sound: asking one record at a time
+ * is what let access be checked exactly rather than approximated with a join this layer
+ * cannot scope. The register-wide view earns its place only by keeping that exactness —
+ * which is why it does not join. It asks the beneficiary service which records this actor
+ * may see, applying the identical row-level rules, and filters to that set.
+ *
+ * So the two paths enforce the same thing by the same means:
+ *
+ *   ONE BENEFICIARY   getBeneficiaryById() throws 404 if the record is out of scope, before
+ *                     a single document is read.
+ *   ALL OF THEM       visibleBeneficiaryIds() returns exactly the records that same check
+ *                     would allow, and nothing outside it can match.
+ *
+ * A volunteer therefore sees documents for the people they captured and no others; a
+ * coordinator sees their programmes. Neither is approximated, and neither can be widened by
+ * anything a caller sends.
+ */
 export async function listDocuments(query, actor) {
   const { page, limit, sort, beneficiary: beneficiaryId, kind, includeDeleted } = query;
 
-  // Scoping is enforced here: if the actor cannot see the beneficiary, this throws 404
-  // before any document is read.
-  const beneficiary = await getBeneficiaryById(beneficiaryId, actor);
+  const filter = {};
 
-  const filter = { beneficiary: beneficiary._id };
+  if (beneficiaryId) {
+    // Scoping is enforced here: if the actor cannot see the beneficiary, this throws 404
+    // before any document is read.
+    const beneficiary = await getBeneficiaryById(beneficiaryId, actor);
+    filter.beneficiary = beneficiary._id;
+  } else {
+    // The same rules, applied to a set instead of one record.
+    filter.beneficiary = { $in: await visibleBeneficiaryIds(actor) };
+  }
+
   if (kind) filter.kind = kind;
   if (!includeDeleted) filter.deletedAt = null;
 
-  return paginateQuery(Document, filter, { page, limit, sort });
+  return paginateQuery(Document, filter, {
+    page,
+    limit,
+    sort,
+    // Named so a register-wide list can say whose document each row is. Reference code and
+    // name only — the same narrow select every other cross-collection listing uses.
+    populate: { path: 'beneficiary', select: 'referenceCode firstName lastName status' },
+  });
 }
 
 export async function getDocumentById(id, actor) {

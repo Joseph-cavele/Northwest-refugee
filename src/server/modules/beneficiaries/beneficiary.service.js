@@ -146,6 +146,26 @@ export async function getBeneficiaryById(id, actor, { select } = {}) {
 }
 
 /**
+ * The ids of every beneficiary this actor may see.
+ *
+ * Exists so another module can scope a collection that hangs off the register — documents,
+ * for instance — WITHOUT reimplementing the row-level rules or reaching past them into the
+ * model. It applies exactly the filter every read here applies: a volunteer gets the people
+ * they captured, a coordinator their programmes, an office role everyone.
+ *
+ * Returns ids rather than documents on purpose. A caller scoping a join has no business
+ * holding a register's worth of personal information to do it, and this way it cannot.
+ *
+ * Deliberately unpaginated: it is a scope, not a listing. At NGO scale that is a few
+ * thousand ObjectIds at worst; if the register ever outgrows that, this becomes an
+ * aggregation with a $lookup rather than a bigger array.
+ */
+export async function visibleBeneficiaryIds(actor) {
+  const rows = await Beneficiary.find(scopedFilter(actor, {})).select('_id').lean().exec();
+  return rows.map((row) => row._id);
+}
+
+/**
  * Read the special personal information behind a record. Requires
  * beneficiary:read_sensitive and always writes an audit entry — do not add a code path
  * that loads these fields without going through here.

@@ -208,3 +208,38 @@
  * palette on a screen full of status colours is worse than none. Add it as a considered
  * piece of work, redefining only the semantic aliases above.
  */
+
+/*
+ * Print.
+ *
+ * The money summary is meant to be handed to a board or a funder, and the browser's own
+ * print-to-PDF is what produces that — a PDF library would be a large dependency for a page
+ * that already lays out correctly on paper.
+ *
+ * What goes is the chrome: the sidebar and topbar are navigation, not content, and a
+ * printed page carrying a nav rail wastes a third of the sheet. `.no-print` marks the
+ * controls that only make sense on screen — the buttons that produced the printout, chiefly.
+ */
+@media print {
+  aside,
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  /* Panels become plain sections: a border and a shadow are screen affordances. */
+  .sheet {
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  /* Keep a budget line or a transaction whole rather than split across a page break. */
+  tr,
+  li {
+    break-inside: avoid;
+  }
+}

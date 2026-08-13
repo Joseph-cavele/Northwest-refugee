@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { Loader2, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDebounce } from '@/hooks/useDebounce';
 import { listBeneficiaries } from '@/api/beneficiaries.api';
-import type { BeneficiarySummary } from '@/api/beneficiaries.api';
+import type { BeneficiaryRow } from '@/api/beneficiaries.api';
 import { BENEFICIARY_STATUS_LABELS } from '@/types/enums';
 
 /*
@@ -15,9 +16,10 @@ import { BENEFICIARY_STATUS_LABELS } from '@/types/enums';
  * searches the server's text index over first name, last name and reference code — so it
  * matches whole words, not prefixes: "Thandiwe" finds her, "Tha" does not.
  *
- * RESULTS ARE THE ANSWER, NOT A LINK. There is no beneficiary detail page yet, and a row
- * that looks clickable and goes nowhere is worse than a row that does not. Name, reference
- * code and status is what someone at the desk actually needs; the code is what they quote.
+ * A RESULT IS BOTH THE ANSWER AND THE WAY IN. Name, reference code and status is usually
+ * the whole answer at a front desk — someone is checking a person is on the register and
+ * quoting the code back to them — so those are rendered plainly rather than hidden behind
+ * a click. Each row also opens the record, now that there is one to open.
  *
  * WHAT THIS DELIBERATELY DOES NOT SHOW: date of birth, permit number, immigration status,
  * vulnerability flags, phone. The list endpoint does not return them and this must never
@@ -44,7 +46,7 @@ export function TopBarSearch({ className }: { className?: string }) {
    * the state we hold. It also fixes a real flicker: while a new query is in flight, the
    * previous query's rows are not shown as though they answered it.
    */
-  const [answered, setAnswered] = useState<{ query: string; rows: BeneficiarySummary[] } | null>(null);
+  const [answered, setAnswered] = useState<{ query: string; rows: BeneficiaryRow[] } | null>(null);
 
   useEffect(() => {
     if (!longEnough) return;
@@ -52,8 +54,9 @@ export function TopBarSearch({ className }: { className?: string }) {
     const controller = new AbortController();
 
     listBeneficiaries({ search: query, limit: 6 }, controller.signal)
-      .then((rows) => {
-        if (!controller.signal.aborted) setAnswered({ query, rows });
+      .then((page) => {
+        // The list endpoint is paginated now; the panel wants the rows, not the totals.
+        if (!controller.signal.aborted) setAnswered({ query, rows: page.data });
       })
       .catch(() => {
         // A failed lookup is not worth a banner over the whole dashboard. The panel simply
@@ -134,16 +137,22 @@ export function TopBarSearch({ className }: { className?: string }) {
           ) : (
             <ul className="divide-y divide-line">
               {results.map((row) => (
-                <li key={row._id} className="flex items-center gap-3 px-4 py-2.5">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-body">
-                      {row.firstName} {row.lastName}
-                    </p>
-                    <p className="truncate font-mono text-xs text-subtle">{row.referenceCode}</p>
-                  </div>
-                  <span className="shrink-0 rounded-full bg-ink-100 px-2 py-0.5 text-xs text-ink-600">
-                    {BENEFICIARY_STATUS_LABELS[row.status]}
-                  </span>
+                <li key={row._id}>
+                  <Link
+                    href={`/dashboard/beneficiaries/${row._id}`}
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 hover:bg-ink-25"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-body">
+                        {row.firstName} {row.lastName}
+                      </p>
+                      <p className="truncate font-mono text-xs text-subtle">{row.referenceCode}</p>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-ink-100 px-2 py-0.5 text-xs text-ink-600">
+                      {BENEFICIARY_STATUS_LABELS[row.status]}
+                    </span>
+                  </Link>
                 </li>
               ))}
             </ul>

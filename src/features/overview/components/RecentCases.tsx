@@ -35,7 +35,7 @@ function StatusPill({ status }: { status: CaseStatus }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold',
+        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-sm font-semibold',
         className
       )}
     >
@@ -49,7 +49,7 @@ function Priority({ row }: { row: CaseRow }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 text-xs font-semibold',
+        'inline-flex items-center gap-1.5 text-sm font-semibold',
         row.isEscalated ? 'text-danger-700' : 'text-muted'
       )}
     >
@@ -65,7 +65,7 @@ function Initials({ first, last }: { first: string; last: string }) {
   return (
     <span
       aria-hidden="true"
-      className="grid size-8 shrink-0 place-items-center rounded-full bg-brand-50 text-xs font-semibold text-brand-700"
+      className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-50 text-sm font-semibold text-brand-700 ring-1 ring-brand-500/15 ring-inset"
     >
       {`${first[0] ?? ''}${last[0] ?? ''}`.toUpperCase()}
     </span>
@@ -87,8 +87,8 @@ export function RecentCases({ cases }: RecentCasesProps) {
   if (cases.length === 0) {
     return (
       <div className="px-5 py-10 text-center">
-        <p className="text-sm text-body">No cases are open.</p>
-        <p className="mx-auto mt-1 max-w-sm text-xs text-muted">
+        <p className="text-base text-body">No cases are open.</p>
+        <p className="mx-auto mt-1 max-w-sm text-sm text-muted">
           A case is opened from a beneficiary&rsquo;s record when someone takes ownership of
           their situation.
         </p>
@@ -111,17 +111,17 @@ export function RecentCases({ cases }: RecentCasesProps) {
                   <Initials first={beneficiary.firstName} last={beneficiary.lastName} />
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-body">
+                  <p className="truncate text-base font-medium text-body">
                     {beneficiary ? `${beneficiary.firstName} ${beneficiary.lastName}` : row.caseNumber}
                   </p>
-                  <p className="truncate font-mono text-xs text-subtle">
+                  <p className="truncate font-mono text-sm text-subtle">
                     {beneficiary?.referenceCode ?? row.caseNumber}
                   </p>
                 </div>
                 <StatusPill status={row.status} />
               </div>
 
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
                 <span>{SERVICE_CATEGORY_LABELS[row.category]}</span>
                 <span aria-hidden="true">·</span>
                 <Priority row={row} />
@@ -129,7 +129,7 @@ export function RecentCases({ cases }: RecentCasesProps) {
                 <span>{openFor(row)}</span>
               </div>
 
-              <p className="text-xs text-subtle">
+              <p className="text-sm text-subtle">
                 {caseworker ? `With ${caseworker.name}` : 'Unassigned'}
               </p>
             </li>
@@ -139,15 +139,20 @@ export function RecentCases({ cases }: RecentCasesProps) {
 
       {/* --- from md up: the table. Scrolls inside itself, never the page. --- */}
       <div className="hidden overflow-x-auto md:block">
-        <table className="w-full min-w-[52rem] border-collapse text-sm">
+        <table className="w-full min-w-[52rem] border-collapse text-base">
           <caption className="sr-only">The most recently opened case files</caption>
           <thead>
-            <tr className="border-b border-line text-left">
+            {/*
+              * The heading row sits on the sunken tone rather than on the surface. A white
+              * header over white rows relies on the type alone to say "this is not data",
+              * and at 12px uppercase that is a thin distinction to hang a whole table on.
+              */}
+            <tr className="border-b border-line bg-ink-25 text-left">
               {HEADINGS.map((heading) => (
                 <th
                   key={heading}
                   scope="col"
-                  className="px-4 py-3 text-[0.6875rem] font-semibold tracking-[0.08em] text-subtle uppercase"
+                  className="px-4 py-3 text-xs font-semibold tracking-[0.08em] text-subtle uppercase"
                 >
                   {heading}
                 </th>
@@ -160,7 +165,12 @@ export function RecentCases({ cases }: RecentCasesProps) {
               const caseworker = caseworkerOf(row);
 
               return (
-                <tr key={row._id} className="border-b border-line last:border-0 hover:bg-ink-25">
+                <tr
+                  key={row._id}
+                  // Brand tint rather than grey: on a row you can click through to, a
+                  // neutral hover reads as the row being disabled.
+                  className="border-b border-line transition-colors last:border-0 hover:bg-brand-50/50"
+                >
                   <td className="px-4 py-3">
                     {beneficiary ? (
                       <div className="flex items-center gap-3">
@@ -169,7 +179,7 @@ export function RecentCases({ cases }: RecentCasesProps) {
                           <span className="block truncate font-medium text-body">
                             {beneficiary.firstName} {beneficiary.lastName}
                           </span>
-                          <span className="block truncate font-mono text-xs text-subtle">
+                          <span className="block truncate font-mono text-sm text-subtle">
                             {beneficiary.referenceCode}
                           </span>
                         </div>
@@ -181,7 +191,7 @@ export function RecentCases({ cases }: RecentCasesProps) {
 
                   {/* Reference codes are a column of identifiers: tabular figures align them. */}
                   <td
-                    className="px-4 py-3 font-mono text-xs whitespace-nowrap text-muted"
+                    className="px-4 py-3 font-mono text-sm whitespace-nowrap text-muted"
                     style={{ fontVariantNumeric: 'tabular-nums' }}
                   >
                     {row.caseNumber}
@@ -190,7 +200,7 @@ export function RecentCases({ cases }: RecentCasesProps) {
                   <td className="px-4 py-3 whitespace-nowrap text-muted">
                     {formatDate(row.openedAt)}
                     {/* The number a supervisor actually asks about. */}
-                    <span className="block text-xs text-subtle">{openFor(row)}</span>
+                    <span className="block text-sm text-subtle">{openFor(row)}</span>
                   </td>
 
                   <td className="px-4 py-3 text-muted">{SERVICE_CATEGORY_LABELS[row.category]}</td>

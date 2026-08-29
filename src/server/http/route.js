@@ -3,6 +3,16 @@ import AppError from '../utils/AppError.js';
 import { verifyAccessToken } from '../utils/tokens.js';
 import { hasPermission, assertKnownPermission } from '../config/permissions.js';
 import { connectDB } from '../config/db.js';
+/*
+ * Side-effect import: registers every mongoose model on this bundle.
+ *
+ * Under Express, app.js pulled in every route and therefore every model, so populate()
+ * always found the schema it needed. A Next route is its own bundle and only has what it
+ * imports — so /auth/me could populate `departmentId` with no Department schema registered
+ * and 500. Every route already goes through this wrapper, which makes it the one place
+ * that restores the old invariant. See server/models.js.
+ */
+import '../models.js';
 import User from '../modules/users/user.model.js';
 import AuditLog, { ACTIONS } from '../modules/audit/audit.model.js';
 import { toErrorResponse } from './errors.js';

@@ -8,7 +8,7 @@ import {
   isProgrammeScoped,
   isOwnRecordsOnly,
 } from '../../config/permissions.js';
-import { PROGRAMME_PILLARS } from '../../config/constants.js';
+import { PROGRAMME_PILLARS, PAGINATION } from '../../config/constants.js';
 
 // Cross-module MODEL imports, read-only and counting only.
 //
@@ -595,7 +595,20 @@ export function listMetrics(query = {}) {
   // by default because a lean result skips the model's toJSON transform, which is what
   // strips permit numbers and vulnerability flags — a Metric row is a date, a key and an
   // integer, and has no such transform to lose.
-  return paginateQuery(Metric, filter, { page, limit, sort: sort ?? 'date', lean: true });
+  /*
+   * The one query allowed past PAGINATION.MAX_LIMIT. A chart needs its whole window in one
+   * answer, and rows sort by date ASCENDING — so a clamp here does not shorten the series,
+   * it returns the oldest slice of it and leaves the caller drawing a stale line with no
+   * indication anything was dropped. See PAGINATION.METRIC_MAX_LIMIT for why a metric row
+   * may be read in bulk when a beneficiary row may not.
+   */
+  return paginateQuery(Metric, filter, {
+    page,
+    limit,
+    sort: sort ?? 'date',
+    lean: true,
+    maxLimit: PAGINATION.METRIC_MAX_LIMIT,
+  });
 }
 
 /**

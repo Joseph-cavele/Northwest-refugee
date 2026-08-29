@@ -26,7 +26,7 @@ export const PLEDGE_STATUS = Object.freeze([
 ]);
 
 export const DONATION_METHODS = Object.freeze([
-  'CASH', 'EFT', 'DEBIT_ORDER', 'CARD', 'PAYSTACK', 'IN_KIND', 'OTHER',
+  'CASH', 'EFT', 'DEBIT_ORDER', 'CARD', 'PAYSTACK', 'PAYPAL', 'IN_KIND', 'OTHER',
 ]);
 
 export const DONATION_STATUS = Object.freeze(['PENDING', 'SETTLED', 'FAILED', 'REFUNDED']);
@@ -65,7 +65,26 @@ const donorSchema = new Schema(
     lastGiftAt: { type: Date, default: null, index: true },
 
     notes: { type: String, trim: true, maxlength: 2000, default: '' },
-    capturedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    /*
+     * Null only for a donor who created themselves — somebody giving through the public page
+     * at /donate, where there genuinely is no staff capturer. Every donor entered by staff
+     * must still name one, which is what the conditional keeps. Mirrors the same rule on
+     * Beneficiary.capturedBy, and for the same reason.
+     */
+    capturedBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+      index: true,
+      required: [
+        function staffCaptureNeedsACapturer() {
+          return this.source !== 'ONLINE';
+        },
+        'capturedBy is required for a staff-captured donor',
+      ],
+    },
+    /** How this donor record came to exist. ONLINE is the public donation page. */
+    source: { type: String, enum: ['STAFF', 'ONLINE'], default: 'STAFF', index: true },
     deletedAt: { type: Date, default: null, index: true },
   },
   { timestamps: true, toObject: { virtuals: true } }

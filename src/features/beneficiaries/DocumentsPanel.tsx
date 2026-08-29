@@ -82,7 +82,7 @@ export function DocumentsPanel({ beneficiaryId }: DocumentsPanelProps) {
   return (
     <section className="rounded-xl border border-line bg-surface p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-body">
+        <h2 className="flex items-center gap-2 text-base font-semibold text-body">
           <FileText className="size-4 text-subtle" aria-hidden="true" />
           Documents
           {data && (
@@ -111,7 +111,7 @@ export function DocumentsPanel({ beneficiaryId }: DocumentsPanelProps) {
       {loading && !data && <Spinner label="Loading documents" className="py-8" />}
 
       {data && rows.length === 0 && (
-        <p className="mt-3 text-sm text-muted">
+        <p className="mt-3 text-base text-muted">
           Nothing uploaded yet. Permits, identity documents and signed consent forms belong
           here rather than in a shared drive.
         </p>
@@ -133,12 +133,12 @@ export function DocumentsPanel({ beneficiaryId }: DocumentsPanelProps) {
               </span>
 
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-body">
+                <p className="truncate text-base font-medium text-body">
                   {DOCUMENT_KIND_LABELS[row.kind]}
                 </p>
                 {/* The uploaded filename can itself carry a person's name, so it is
                     secondary text rather than the heading — present, not advertised. */}
-                <p className="truncate text-xs text-subtle">
+                <p className="truncate text-sm text-subtle">
                   {row.originalName} · {formatBytes(row.bytes)} · {formatDate(row.createdAt)}
                 </p>
               </div>
@@ -147,7 +147,7 @@ export function DocumentsPanel({ beneficiaryId }: DocumentsPanelProps) {
                 <button
                   type="button"
                   onClick={() => setWanted(row)}
-                  className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border border-line px-3 text-xs font-semibold text-body hover:border-line-strong hover:bg-ink-50"
+                  className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border border-line px-3 text-sm font-semibold text-body hover:border-line-strong hover:bg-ink-50"
                 >
                   <Download className="size-3.5" aria-hidden="true" />
                   Open
@@ -158,7 +158,7 @@ export function DocumentsPanel({ beneficiaryId }: DocumentsPanelProps) {
               ) : (
                 // The row still lists — knowing the scan exists is what document:read
                 // buys. Fetching it is a different permission and says so.
-                <span className="shrink-0 text-xs text-subtle">View not permitted</span>
+                <span className="shrink-0 text-sm text-subtle">View not permitted</span>
               )}
             </li>
           ))}
@@ -250,21 +250,21 @@ function DownloadDialog({
             target="_blank"
             rel="noopener noreferrer"
             onClick={onClose}
-            className="inline-flex min-h-10 w-fit items-center gap-2 rounded-full bg-brand-500 px-5 text-sm font-semibold text-white hover:bg-brand-700"
+            className="inline-flex min-h-10 w-fit items-center gap-2 rounded-full bg-brand-500 px-5 text-base font-semibold text-white hover:bg-brand-700"
           >
             <Download className="size-4" aria-hidden="true" />
             Open {doc.originalName}
           </a>
           {/* The link expires in about five minutes and the read is already recorded, so
               there is nothing to gain by keeping this dialog open. */}
-          <p className="text-xs text-subtle">
+          <p className="text-sm text-subtle">
             This link stops working in about five minutes. The read has already been
             recorded.
           </p>
         </div>
       ) : (
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium text-body">
+          <span className="text-base font-medium text-body">
             Reason <span className="text-subtle">(optional)</span>
           </span>
           <input
@@ -274,9 +274,9 @@ function DownloadDialog({
             maxLength={200}
             placeholder="e.g. Verifying the permit against Home Affairs"
             disabled={busy}
-            className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-body placeholder:text-subtle hover:border-line-strong focus:border-brand-400"
+            className="rounded-lg border border-line bg-surface px-3 py-2 text-base text-body placeholder:text-subtle hover:border-line-strong focus:border-brand-400"
           />
-          <span className="text-xs text-subtle">
+          <span className="text-sm text-subtle">
             An audit trail of who opened what, with no why, answers half the question.
           </span>
         </label>
@@ -335,12 +335,12 @@ function UploadDialog({
 
       <div className="flex flex-col gap-4">
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium text-body">Document type</span>
+          <span className="text-base font-medium text-body">Document type</span>
           <select
             value={kind}
             onChange={(event) => setKind(event.target.value as DocumentKind)}
             disabled={busy}
-            className="min-h-10 rounded-lg border border-line bg-surface px-3 text-sm text-body hover:border-line-strong focus:border-brand-400"
+            className="min-h-10 rounded-lg border border-line bg-surface px-3 text-base text-body hover:border-line-strong focus:border-brand-400"
           >
             {DOCUMENT_KINDS.map((value) => (
               <option key={value} value={value}>
@@ -348,28 +348,28 @@ function UploadDialog({
               </option>
             ))}
           </select>
-          {fieldErrors.kind && <span className="text-xs text-danger-700">{fieldErrors.kind}</span>}
+          {fieldErrors.kind && <span className="text-sm text-danger-700">{fieldErrors.kind}</span>}
         </label>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium text-body">File</span>
+          <span className="text-base font-medium text-body">File</span>
           <input
             ref={inputRef}
             type="file"
             accept={ACCEPT_ATTRIBUTE}
             onChange={(event) => setFile(event.target.files?.[0] ?? null)}
             disabled={busy}
-            className="rounded-lg border border-line bg-surface p-2 text-sm text-body file:mr-3 file:rounded-full file:border-0 file:bg-ink-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-body"
+            className="rounded-lg border border-line bg-surface p-2 text-base text-body file:mr-3 file:rounded-full file:border-0 file:bg-ink-100 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-body"
           />
-          <span className={cn('text-xs', tooBig ? 'font-medium text-danger-700' : 'text-subtle')}>
+          <span className={cn('text-sm', tooBig ? 'font-medium text-danger-700' : 'text-subtle')}>
             {tooBig
               ? `That file is ${formatBytes(file.size)}. The limit is 10 MB.`
               : 'JPG, PNG, WEBP, HEIC or PDF, up to 10 MB. A phone photo of a permit fits.'}
           </span>
-          {fieldErrors.file && <span className="text-xs text-danger-700">{fieldErrors.file}</span>}
+          {fieldErrors.file && <span className="text-sm text-danger-700">{fieldErrors.file}</span>}
         </label>
 
-        <p className="text-xs text-subtle">
+        <p className="text-sm text-subtle">
           The file goes straight to secure storage and is never written to this server. It
           can only be opened again through this record, and every opening is recorded.
         </p>

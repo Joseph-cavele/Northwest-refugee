@@ -110,7 +110,7 @@ function Person({ row }: { row: CaseRow }) {
       >
         {person.firstName} {person.lastName}
       </Link>
-      <span className="block truncate font-mono text-xs text-subtle">{person.referenceCode}</span>
+      <span className="block truncate font-mono text-sm text-subtle">{person.referenceCode}</span>
     </div>
   );
 }
@@ -156,7 +156,7 @@ export function CaseList() {
     <div className="flex flex-col gap-5">
       <header>
         <h1 className="text-2xl font-semibold tracking-[-0.02em] text-body">Cases</h1>
-        <p className="mt-1 text-sm text-muted">
+        <p className="mt-1 text-base text-muted">
           {meta
             ? // Scoped rows, so this is not the organisation's caseload and must not read
               // as one — a volunteer's total is the files they captured.
@@ -176,7 +176,7 @@ export function CaseList() {
           aria-pressed={mine}
           onClick={() => refilter(() => setMine((v) => !v))}
           className={cn(
-            'inline-flex min-h-10 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors',
+            'inline-flex min-h-10 items-center gap-2 rounded-full border px-4 text-base font-medium transition-colors',
             mine
               ? 'border-brand-500 bg-brand-500 text-white'
               : 'border-line bg-surface text-body hover:border-line-strong'
@@ -191,7 +191,7 @@ export function CaseList() {
           aria-pressed={urgent}
           onClick={() => refilter(() => setUrgent((v) => !v))}
           className={cn(
-            'inline-flex min-h-10 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors',
+            'inline-flex min-h-10 items-center gap-2 rounded-full border px-4 text-base font-medium transition-colors',
             urgent
               ? 'border-danger-500 bg-danger-500 text-white'
               : 'border-line bg-surface text-body hover:border-line-strong'
@@ -201,7 +201,7 @@ export function CaseList() {
           Escalated only
         </button>
 
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-base">
           <span className="sr-only">Filter by status</span>
           <select
             value={status}
@@ -209,7 +209,7 @@ export function CaseList() {
             // The escalated queue is open files by definition; letting someone also pick
             // "Closed" would produce a guaranteed-empty list and look like a broken filter.
             disabled={urgent}
-            className="min-h-10 rounded-full border border-line bg-surface px-4 text-sm text-body hover:border-line-strong disabled:text-ink-400"
+            className="min-h-10 rounded-full border border-line bg-surface px-4 text-base text-body hover:border-line-strong disabled:text-ink-400"
           >
             <option value="">Every status</option>
             {CASE_STATUSES.map((value) => (
@@ -220,14 +220,14 @@ export function CaseList() {
           </select>
         </label>
 
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-base">
           <span className="sr-only">Filter by category</span>
           <select
             value={category}
             onChange={(event) =>
               refilter(() => setCategory(event.target.value as ServiceCategory | ''))
             }
-            className="min-h-10 rounded-full border border-line bg-surface px-4 text-sm text-body hover:border-line-strong"
+            className="min-h-10 rounded-full border border-line bg-surface px-4 text-base text-body hover:border-line-strong"
           >
             <option value="">Every category</option>
             {SERVICE_CATEGORIES.map((value) => (
@@ -252,7 +252,7 @@ export function CaseList() {
 
       {data && rows.length === 0 && (
         <div className="rounded-xl border border-line bg-surface px-6 py-12 text-center">
-          <p className="text-sm text-body">
+          <p className="text-base text-body">
             {urgent && !filteredBeyondUrgent(status, category, mine)
               ? // Worth saying warmly: an empty escalated queue is the good outcome, and
                 // rendering it as "no results" makes the best state look like a failure.
@@ -261,7 +261,7 @@ export function CaseList() {
                 ? 'No files match those filters.'
                 : 'No cases have been opened yet.'}
           </p>
-          <p className="mx-auto mt-1 max-w-sm text-xs text-muted">
+          <p className="mx-auto mt-1 max-w-sm text-sm text-muted">
             {filtered
               ? 'Clear a filter to widen the search.'
               : 'A case is opened for a beneficiary once their needs go beyond a single request.'}
@@ -282,15 +282,15 @@ export function CaseList() {
                   <Person row={row} />
                   <span
                     className={cn(
-                      'shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap',
+                      'shrink-0 rounded-full px-2.5 py-1 text-sm font-semibold whitespace-nowrap',
                       STATUS_TONE[row.status]
                     )}
                   >
                     {CASE_STATUS_LABELS[row.status]}
                   </span>
                 </div>
-                <p className="font-mono text-xs text-subtle">{row.caseNumber}</p>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                <p className="font-mono text-sm text-subtle">{row.caseNumber}</p>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                   <span className={PRIORITY_TEXT[row.priority]}>
                     {URGENCY_LABELS[row.priority]}
                   </span>
@@ -309,7 +309,7 @@ export function CaseList() {
 
           {/* --- from md up: the table, scrolling inside itself --- */}
           <div className="hidden overflow-x-auto md:block">
-            <table className="w-full min-w-[64rem] border-collapse text-sm">
+            <table className="w-full min-w-[64rem] border-collapse text-base">
               <caption className="sr-only">The caseload</caption>
               <thead>
                 <tr className="border-b border-line text-left">
@@ -317,7 +317,7 @@ export function CaseList() {
                     <th
                       key={heading}
                       scope="col"
-                      className="px-4 py-3 text-[0.6875rem] font-semibold tracking-[0.08em] text-subtle uppercase"
+                      className="px-4 py-3 text-xs font-semibold tracking-[0.08em] text-subtle uppercase"
                     >
                       {heading}
                     </th>
@@ -336,9 +336,9 @@ export function CaseList() {
                       )}
                     >
                       <td className="px-4 py-3">
-                        <span className="block font-mono text-xs text-body">{row.caseNumber}</span>
+                        <span className="block font-mono text-sm text-body">{row.caseNumber}</span>
                         {row.summary && (
-                          <span className="mt-0.5 block max-w-[22rem] truncate text-xs text-subtle">
+                          <span className="mt-0.5 block max-w-[22rem] truncate text-sm text-subtle">
                             {row.summary}
                           </span>
                         )}
@@ -361,7 +361,7 @@ export function CaseList() {
                       <td className="px-4 py-3">
                         <span
                           className={cn(
-                            'inline-block rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap',
+                            'inline-block rounded-full px-2.5 py-1 text-sm font-semibold whitespace-nowrap',
                             STATUS_TONE[row.status]
                           )}
                         >

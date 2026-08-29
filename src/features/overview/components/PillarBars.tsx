@@ -28,17 +28,29 @@ const PILLAR_ORDER: ProgrammePillar[] = [
 ];
 
 /*
- * The logo's four figures, plus one deeper step of the brand blue. Assigned in a FIXED
- * order — never by rank, or a quiet week would repaint every pillar and the reader would
- * lose the only thing colour is doing here.
+ * ONE HUE, NOT FIVE. This was a five-colour scale — one per pillar, drawn from the logo —
+ * and it was replaced for three reasons, in ascending order of seriousness.
+ *
+ * IT ENCODED NOTHING. Every row below already prints its pillar name, its count and its
+ * share. Colour was restating the label beside it, which is what Design.md §30 means by
+ * "do not create meaningless analytics" — the rule is about the ink as much as the metric.
+ *
+ * TWO OF THE FIVE WERE BARELY VISIBLE. Measured against this surface, gold #fdd731 came in
+ * at 1.37:1 contrast and accent #f28529 at 2.51:1, both under the 3:1 a filled mark needs;
+ * and brand-800 #1a265c has chroma 0.098, low enough that it reads as grey rather than as a
+ * colour. So the "code" had two bars you could hardly see and one that looked like a
+ * neutral.
+ *
+ * IT SPENT THE DESTRUCTIVE COLOUR ON A PROGRAMME. Social cohesion was painted in
+ * danger-500, the same red this dashboard uses 64 times to mean something is wrong, and
+ * which §4 lists as its own reserved token. A red bar has to mean trouble everywhere or
+ * nowhere; a pillar is not trouble, and a reader who learns to skim for red should not be
+ * stopped by a programme name.
+ *
+ * Bars all measure the same quantity — open cases — so this is magnitude, and magnitude
+ * takes a single hue. Identity is carried by the label, where it already was.
  */
-const PILLAR_COLOUR: Record<ProgrammePillar, string> = {
-  ADVOCACY_DOCUMENTATION: 'var(--color-brand-500)',
-  SKILLS_ENTREPRENEURSHIP: 'var(--color-accent-500)',
-  EDUCATION: 'var(--color-gold-400)',
-  SOCIAL_COHESION: 'var(--color-danger-500)',
-  WOMEN_YOUTH_EMPOWERMENT: 'var(--color-brand-800)',
-};
+const BAR_COLOUR = 'var(--color-brand-500)';
 
 export interface PillarBarsProps {
   counts: Partial<Record<ProgrammePillar, number>>;
@@ -49,7 +61,6 @@ export function PillarBars({ counts, className }: PillarBarsProps) {
   const rows = PILLAR_ORDER.map((pillar) => ({
     pillar,
     value: counts[pillar] ?? 0,
-    colour: PILLAR_COLOUR[pillar],
   }));
 
   const total = rows.reduce((sum, r) => sum + r.value, 0);
@@ -59,7 +70,7 @@ export function PillarBars({ counts, className }: PillarBarsProps) {
 
   return (
     <div className={cn('flex flex-col gap-4', className)}>
-      <p className="text-sm text-muted">
+      <p className="text-base text-muted">
         <span className="text-2xl font-semibold tracking-[-0.02em] text-body">
           {formatCount(total)}
         </span>{' '}
@@ -71,7 +82,7 @@ export function PillarBars({ counts, className }: PillarBarsProps) {
           const share = total === 0 ? 0 : Math.round((row.value / total) * 100);
           return (
             <li key={row.pillar} className="flex flex-col gap-1.5">
-              <div className="flex items-baseline justify-between gap-3 text-xs">
+              <div className="flex items-baseline justify-between gap-3 text-sm">
                 <span className="min-w-0 truncate text-muted">{PILLAR_LABELS[row.pillar]}</span>
                 {/* The number is always present. The bar is a comparison aid, never the
                     only way to read the value — which is also what makes this legible in
@@ -87,7 +98,7 @@ export function PillarBars({ counts, className }: PillarBarsProps) {
               <div className="h-2 overflow-hidden rounded-full bg-ink-100">
                 <div
                   className="h-full rounded-full transition-[width] duration-500 motion-reduce:transition-none"
-                  style={{ width: `${(row.value / peak) * 100}%`, background: row.colour }}
+                  style={{ width: `${(row.value / peak) * 100}%`, background: BAR_COLOUR }}
                 />
               </div>
             </li>

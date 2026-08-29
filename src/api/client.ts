@@ -259,6 +259,15 @@ export const api = {
     request<T>(path, { ...options, method: 'POST', body }),
   patch: <T>(path: string, body?: unknown, options?: Omit<RequestOptions, 'method' | 'body'>) =>
     request<T>(path, { ...options, method: 'PATCH', body }),
+  /*
+   * DELETE, which on this API is almost always a SOFT delete — the route sets `deletedAt`
+   * and the row leaves its listings, rather than the record being removed. Several
+   * collections here are evidence a funder or an auditor is shown, and `T` is the updated
+   * record for that reason: the caller gets back what it now looks like, not a 204 and a
+   * guess.
+   */
+  delete: <T>(path: string, options?: Omit<RequestOptions, 'method' | 'body'>) =>
+    request<T>(path, { ...options, method: 'DELETE' }),
   /** For a screen that renders a pager. Everything else should use `get`. */
   list: <T>(path: string, options?: Omit<RequestOptions, 'method' | 'body'>) =>
     requestList<T>(path, { ...options, method: 'GET' }),

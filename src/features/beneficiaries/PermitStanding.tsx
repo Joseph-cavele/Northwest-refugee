@@ -90,16 +90,16 @@ export function PermitStanding({
     >
       <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
         <div className="min-w-0">
-          <h2 className="text-[0.6875rem] font-semibold tracking-[0.14em] text-subtle uppercase">
+          <h2 className="text-xs font-semibold tracking-[0.14em] text-subtle uppercase">
             Permit standing
           </h2>
           <p className="mt-1.5 text-[1.375rem] leading-tight font-semibold tracking-[-0.015em] text-body">
             {headline}
           </p>
-          <p className="mt-1 max-w-prose text-sm text-muted">{detail}</p>
+          <p className="mt-1 max-w-prose text-base text-muted">{detail}</p>
         </div>
 
-        <div className="text-sm sm:text-right">
+        <div className="text-base sm:text-right">
           <p className="font-medium text-body">{IMMIGRATION_STATUS_LABELS[immigrationStatus]}</p>
           {permitType && <p className="mt-0.5 text-muted">{permitType}</p>}
         </div>
@@ -107,7 +107,7 @@ export function PermitStanding({
 
       {standing.elapsed !== null && (
         <div className="mt-5" aria-hidden="true">
-          <div className="flex items-baseline justify-between gap-4 text-xs text-subtle">
+          <div className="flex items-baseline justify-between gap-4 text-sm text-subtle">
             <span>Issued {formatDate(issuedAt)}</span>
             <span>Expires {formatDate(expiresAt)}</span>
           </div>

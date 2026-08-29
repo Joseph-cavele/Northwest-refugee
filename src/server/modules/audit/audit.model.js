@@ -55,6 +55,12 @@ export const ACTIONS = Object.freeze({
   EVENT_CREATED: 'event.created',
   EVENT_UPDATED: 'event.updated',
   EVENT_PARTICIPANTS_RECORDED: 'event.participants_recorded',
+  // Publication is audited separately from an ordinary edit: it is the moment a record
+  // stops being internal, and 'who put this on the public site, and when' is a question
+  // an organisation has to be able to answer.
+  EVENT_PUBLISHED: 'event.published',
+  EVENT_UNPUBLISHED: 'event.unpublished',
+  EVENT_DELETED: 'event.deleted',
   ENROLLED: 'enrollment.created',
   ENROLLMENT_UPDATED: 'enrollment.updated',
   ATTENDANCE_CAPTURED: 'attendance.captured',

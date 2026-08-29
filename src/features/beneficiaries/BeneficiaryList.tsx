@@ -2,10 +2,12 @@
 
 import { useCallback, useState } from 'react';
 import Link from 'next/link';
-import { AlertTriangle, ChevronRight, Search, ShieldAlert } from 'lucide-react';
+import { AlertTriangle, ChevronRight, Search, ShieldAlert, UserPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useApi } from '@/hooks/useApi';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useAuth } from '@/auth/useAuth';
+import { PERMISSIONS } from '@/auth/permissions';
 import { ErrorAlert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Pager } from '@/components/ui/pager';
@@ -62,7 +64,7 @@ function Permit({ row, now }: { row: BeneficiaryRow; now: number }) {
 
   if (row.permitExpired || days < 0) {
     return (
-      <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-danger-700">
+      <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-danger-700">
         <AlertTriangle className="size-3.5" aria-hidden="true" />
         Expired {formatDate(expiry)}
       </span>
@@ -72,7 +74,7 @@ function Permit({ row, now }: { row: BeneficiaryRow; now: number }) {
   // 30 days is the horizon the expiry job works to, so it is the horizon shown here.
   const soon = days <= 30;
   return (
-    <span className={cn('text-xs', soon ? 'font-semibold text-accent-800' : 'text-muted')}>
+    <span className={cn('text-sm', soon ? 'font-semibold text-accent-800' : 'text-muted')}>
       {soon ? `${days} day${days === 1 ? '' : 's'} left` : formatDate(expiry)}
     </span>
   );
@@ -91,7 +93,7 @@ function Identity({ row }: { row: BeneficiaryRow }) {
     <div className="flex items-center gap-3">
       <span
         aria-hidden="true"
-        className="grid size-8 shrink-0 place-items-center rounded-full bg-brand-50 text-xs font-semibold text-brand-700"
+        className="grid size-8 shrink-0 place-items-center rounded-full bg-brand-50 text-sm font-semibold text-brand-700"
       >
         {`${row.firstName[0] ?? ''}${row.lastName[0] ?? ''}`.toUpperCase()}
       </span>
@@ -105,13 +107,13 @@ function Identity({ row }: { row: BeneficiaryRow }) {
           </Link>
           {row.isMinor && (
             /* A word and a glyph, never a colour on its own — and never the birthday. */
-            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-danger-50 px-2 py-0.5 text-[0.625rem] font-bold tracking-wide text-danger-700 uppercase">
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-danger-50 px-2 py-0.5 text-xs font-bold tracking-wide text-danger-700 uppercase">
               <ShieldAlert className="size-3" aria-hidden="true" />
               Minor
             </span>
           )}
         </span>
-        <span className="block truncate font-mono text-xs text-subtle">{row.referenceCode}</span>
+        <span className="block truncate font-mono text-sm text-subtle">{row.referenceCode}</span>
       </div>
     </div>
   );
@@ -120,6 +122,7 @@ function Identity({ row }: { row: BeneficiaryRow }) {
 const HEADINGS = ['Person', 'Status', 'Immigration', 'Nationality', 'Permit', 'Registered'];
 
 export function BeneficiaryList() {
+  const { can } = useAuth();
   const [term, setTerm] = useState('');
   const [status, setStatus] = useState<BeneficiaryStatus | ''>('');
   const [page, setPage] = useState(1);
@@ -165,15 +168,29 @@ export function BeneficiaryList() {
 
   return (
     <div className="flex flex-col gap-5">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-[-0.02em] text-body">Beneficiaries</h1>
-        <p className="mt-1 text-sm text-muted">
-          {meta
-            ? // "you can see" is not filler: the rows are scoped, so this is not the
-              // organisation's total and must not be read as one.
-              `${formatCount(meta.total)} ${meta.total === 1 ? 'person' : 'people'} you can see`
-            : 'The people this organisation serves.'}
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-[-0.02em] text-body">Beneficiaries</h1>
+          <p className="mt-1 text-base text-muted">
+            {meta
+              ? // "you can see" is not filler: the rows are scoped, so this is not the
+                // organisation's total and must not be read as one.
+                `${formatCount(meta.total)} ${meta.total === 1 ? 'person' : 'people'} you can see`
+              : 'The people this organisation serves.'}
+          </p>
+        </div>
+
+        {/* Offered only to the roles that meet people. The director reads the register
+            rather than taking intakes at the desk. */}
+        {can(PERMISSIONS.BENEFICIARY_CREATE) && (
+          <Link
+            href="/dashboard/beneficiaries/new"
+            className="inline-flex min-h-10 items-center gap-2 rounded-full bg-brand-500 px-5 text-base font-semibold text-white transition-colors hover:bg-brand-700"
+          >
+            <UserPlus className="size-4" aria-hidden="true" />
+            Register someone
+          </Link>
+        )}
       </header>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -188,18 +205,18 @@ export function BeneficiaryList() {
             value={term}
             onChange={(event) => refilter(() => setTerm(event.target.value))}
             placeholder="Search by name or reference code"
-            className="w-full rounded-full border border-line bg-surface py-2 pr-4 pl-9 text-sm text-body placeholder:text-subtle hover:border-line-strong focus:border-brand-400"
+            className="w-full rounded-full border border-line bg-surface py-2 pr-4 pl-9 text-base text-body placeholder:text-subtle hover:border-line-strong focus:border-brand-400"
           />
         </label>
 
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-base">
           <span className="sr-only">Filter by status</span>
           <select
             value={status}
             onChange={(event) =>
               refilter(() => setStatus(event.target.value as BeneficiaryStatus | ''))
             }
-            className="rounded-full border border-line bg-surface px-4 py-2 text-sm text-body hover:border-line-strong"
+            className="rounded-full border border-line bg-surface px-4 py-2 text-base text-body hover:border-line-strong"
           >
             <option value="">Every status</option>
             {BENEFICIARY_STATUSES.map((value) => (
@@ -213,7 +230,7 @@ export function BeneficiaryList() {
         {term.length > 0 && term.trim().length < 3 && (
           // Said plainly rather than silently returning everything: the server matches whole
           // words on a text index, so two letters is not a narrower search, it is no search.
-          <p className="text-xs text-subtle">Keep typing — search needs three letters.</p>
+          <p className="text-sm text-subtle">Keep typing — search needs three letters.</p>
         )}
       </div>
 
@@ -230,10 +247,10 @@ export function BeneficiaryList() {
 
       {data && rows.length === 0 && (
         <div className="rounded-xl border border-line bg-surface px-6 py-12 text-center">
-          <p className="text-sm text-body">
+          <p className="text-base text-body">
             {search || status ? 'Nobody matches those filters.' : 'Nobody is on the register yet.'}
           </p>
-          <p className="mx-auto mt-1 max-w-sm text-xs text-muted">
+          <p className="mx-auto mt-1 max-w-sm text-sm text-muted">
             {search || status
               ? 'Search matches whole names and full reference codes, not partial words.'
               : 'People arrive through the front desk or the WhatsApp bot. Consent is recorded before anything is stored.'}
@@ -251,7 +268,7 @@ export function BeneficiaryList() {
                   <Identity row={row} />
                   <StatusPill status={row.status} />
                 </div>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
                   <span>{IMMIGRATION_STATUS_LABELS[row.immigration.status]}</span>
                   <span aria-hidden="true">·</span>
                   <span>{row.nationality}</span>
@@ -266,7 +283,7 @@ export function BeneficiaryList() {
                   */}
                 <Link
                   href={`/dashboard/beneficiaries/${row._id}`}
-                  className="inline-flex min-h-9 items-center gap-1 self-start text-xs font-semibold text-brand-600"
+                  className="inline-flex min-h-9 items-center gap-1 self-start text-sm font-semibold text-brand-600"
                 >
                   Open record
                   <ChevronRight className="size-3.5" aria-hidden="true" />
@@ -280,7 +297,7 @@ export function BeneficiaryList() {
 
           {/* --- from md up: the table, scrolling inside itself --- */}
           <div className="hidden overflow-x-auto md:block">
-            <table className="w-full min-w-[58rem] border-collapse text-sm">
+            <table className="w-full min-w-[58rem] border-collapse text-base">
               <caption className="sr-only">The beneficiary register</caption>
               <thead>
                 <tr className="border-b border-line text-left">
@@ -288,7 +305,7 @@ export function BeneficiaryList() {
                     <th
                       key={heading}
                       scope="col"
-                      className="px-4 py-3 text-[0.6875rem] font-semibold tracking-[0.08em] text-subtle uppercase"
+                      className="px-4 py-3 text-xs font-semibold tracking-[0.08em] text-subtle uppercase"
                     >
                       {heading}
                     </th>

@@ -104,12 +104,12 @@ export function StatusDialog({ request, open, onClose, onDone }: StatusDialogPro
       ) : (
         <div className="flex flex-col gap-4">
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-body">Move to</span>
+            <span className="text-base font-medium text-body">Move to</span>
             <select
               value={status}
               onChange={(event) => setStatus(event.target.value as ServiceRequestStatus | '')}
               disabled={busy}
-              className="min-h-10 rounded-lg border border-line bg-surface px-3 text-sm text-body hover:border-line-strong focus:border-brand-400"
+              className="min-h-10 rounded-lg border border-line bg-surface px-3 text-base text-body hover:border-line-strong focus:border-brand-400"
             >
               <option value="">Choose a status…</option>
               {available.map((next) => (
@@ -119,12 +119,12 @@ export function StatusDialog({ request, open, onClose, onDone }: StatusDialogPro
               ))}
             </select>
             {fieldErrors.status && (
-              <span className="text-xs text-danger-700">{fieldErrors.status}</span>
+              <span className="text-sm text-danger-700">{fieldErrors.status}</span>
             )}
           </label>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-body">
+            <span className="text-base font-medium text-body">
               Notes{' '}
               {!needsNotes && status !== '' && <span className="text-subtle">(optional)</span>}
             </span>
@@ -135,13 +135,13 @@ export function StatusDialog({ request, open, onClose, onDone }: StatusDialogPro
               maxLength={2000}
               placeholder={status === '' ? '' : (PROMPT[status] ?? '')}
               disabled={busy || status === ''}
-              className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-body placeholder:text-subtle hover:border-line-strong focus:border-brand-400 disabled:bg-sunken"
+              className="rounded-lg border border-line bg-surface px-3 py-2 text-base text-body placeholder:text-subtle hover:border-line-strong focus:border-brand-400 disabled:bg-sunken"
             />
             {fieldErrors.notes ? (
-              <span className="text-xs text-danger-700">{fieldErrors.notes}</span>
+              <span className="text-sm text-danger-700">{fieldErrors.notes}</span>
             ) : (
               needsNotes && (
-                <span className="text-xs text-subtle">
+                <span className="text-sm text-subtle">
                   Required. This is what the next person reads, and what a funder&rsquo;s
                   auditor sees.
                 </span>
@@ -151,7 +151,7 @@ export function StatusDialog({ request, open, onClose, onDone }: StatusDialogPro
 
           {/* The note can quote a beneficiary directly, so it stays on the record rather
               than going into the audit trail — worth saying where it is being written. */}
-          <p className="text-xs text-subtle">
+          <p className="text-sm text-subtle">
             Notes stay on this request. Do not paste anyone&rsquo;s permit number or
             identity document details into them.
           </p>

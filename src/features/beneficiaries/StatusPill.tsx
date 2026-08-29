@@ -29,7 +29,7 @@ export function StatusPill({
   return (
     <span
       className={cn(
-        'inline-block rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap',
+        'inline-block rounded-full px-2.5 py-1 text-sm font-semibold whitespace-nowrap',
         TONES[status],
         className
       )}

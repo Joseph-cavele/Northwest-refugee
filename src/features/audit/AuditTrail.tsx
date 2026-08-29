@@ -79,12 +79,12 @@ function Row({ entry }: { entry: AuditEntry }) {
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-medium text-body">{labelOf(entry.action)}</span>
-            <span className="text-xs text-subtle">{familyLabel(entry.action.split('.')[0] ?? '')}</span>
+            <span className="text-base font-medium text-body">{labelOf(entry.action)}</span>
+            <span className="text-sm text-subtle">{familyLabel(entry.action.split('.')[0] ?? '')}</span>
             {style.chip && style.icon && (
               <span
                 className={cn(
-                  'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.625rem] font-bold tracking-wide uppercase',
+                  'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold tracking-wide uppercase',
                   style.chip
                 )}
               >
@@ -93,11 +93,11 @@ function Row({ entry }: { entry: AuditEntry }) {
               </span>
             )}
             {entry.status === 'failure' && weight !== 'DENIAL' && (
-              <span className="text-xs font-medium text-danger-700">refused</span>
+              <span className="text-sm font-medium text-danger-700">refused</span>
             )}
           </div>
 
-          <p className="mt-0.5 text-xs text-subtle">
+          <p className="mt-0.5 text-sm text-subtle">
             {/*
               * "System" rather than a blank: the actor is genuinely null for a failed login
               * on an unknown email or an access request from someone with no account, and
@@ -117,13 +117,13 @@ function Row({ entry }: { entry: AuditEntry }) {
         </div>
 
         <div className="shrink-0 text-right">
-          <p className="text-xs whitespace-nowrap text-muted">{formatDateTime(entry.createdAt)}</p>
+          <p className="text-sm whitespace-nowrap text-muted">{formatDateTime(entry.createdAt)}</p>
           {metaKeys.length > 0 && (
             <button
               type="button"
               onClick={() => setOpen((v) => !v)}
               aria-expanded={open}
-              className="text-xs text-brand-600 underline-offset-2 hover:underline"
+              className="text-sm text-brand-600 underline-offset-2 hover:underline"
             >
               {open ? 'Hide detail' : 'Detail'}
             </button>
@@ -132,7 +132,7 @@ function Row({ entry }: { entry: AuditEntry }) {
       </div>
 
       {open && metaKeys.length > 0 && (
-        <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1 rounded-lg bg-sunken px-3 py-2 text-xs sm:grid-cols-2">
+        <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1 rounded-lg bg-sunken px-3 py-2 text-sm sm:grid-cols-2">
           {metaKeys.map((key) => (
             <div key={key} className="flex gap-2">
               <dt className="shrink-0 text-subtle">{key}</dt>
@@ -190,20 +190,20 @@ export function AuditTrail() {
     <div className="flex flex-col gap-5">
       <header>
         <h1 className="text-2xl font-semibold tracking-[-0.02em] text-body">Audit trail</h1>
-        <p className="mt-1 max-w-prose text-sm text-muted">
+        <p className="mt-1 max-w-prose text-base text-muted">
           Every consequential action, refusals included. Append-only — entries cannot be
           edited or deleted by anyone, including an administrator.
         </p>
       </header>
 
       <div className="flex flex-wrap items-center gap-2">
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-base">
           <span className="sr-only">Filter by action</span>
           <select
             value={action}
             onChange={(event) => refilter(() => setAction(event.target.value))}
             disabled={!vocabulary.data}
-            className="min-h-10 max-w-xs rounded-full border border-line bg-surface px-4 text-sm text-body hover:border-line-strong disabled:text-ink-400"
+            className="min-h-10 max-w-xs rounded-full border border-line bg-surface px-4 text-base text-body hover:border-line-strong disabled:text-ink-400"
           >
             <option value="">
               {vocabulary.data ? 'Every action' : vocabulary.error ? 'Unavailable' : 'Loading…'}
@@ -222,14 +222,14 @@ export function AuditTrail() {
           </select>
         </label>
 
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-base">
           <span className="sr-only">Filter by outcome</span>
           <select
             value={status}
             onChange={(event) =>
               refilter(() => setStatus(event.target.value as 'success' | 'failure' | ''))
             }
-            className="min-h-10 rounded-full border border-line bg-surface px-4 text-sm text-body hover:border-line-strong"
+            className="min-h-10 rounded-full border border-line bg-surface px-4 text-base text-body hover:border-line-strong"
           >
             <option value="">Any outcome</option>
             <option value="success">Succeeded</option>
@@ -241,7 +241,7 @@ export function AuditTrail() {
           <button
             type="button"
             onClick={() => refilter(() => { setAction(''); setStatus(''); })}
-            className="min-h-10 text-sm text-muted underline-offset-2 hover:text-brand-600 hover:underline"
+            className="min-h-10 text-base text-muted underline-offset-2 hover:text-brand-600 hover:underline"
           >
             Clear filters
           </button>
@@ -249,7 +249,7 @@ export function AuditTrail() {
       </div>
 
       {vocabulary.error && (
-        <p className="text-xs text-subtle">
+        <p className="text-sm text-subtle">
           The action list could not be loaded, so filtering by action is unavailable. The
           trail itself is unaffected.
         </p>
@@ -269,10 +269,10 @@ export function AuditTrail() {
       {data && rows.length === 0 && (
         <div className="rounded-xl border border-line bg-surface px-6 py-12 text-center">
           <ScrollText className="mx-auto size-5 text-subtle" aria-hidden="true" />
-          <p className="mt-2 text-sm text-body">
+          <p className="mt-2 text-base text-body">
             {action || status ? 'No entries match those filters.' : 'The trail is empty.'}
           </p>
-          <p className="mx-auto mt-1 max-w-sm text-xs text-muted">
+          <p className="mx-auto mt-1 max-w-sm text-sm text-muted">
             Entries are written by the actions themselves — nothing can be added here by
             hand, and nothing can be removed.
           </p>
@@ -281,7 +281,7 @@ export function AuditTrail() {
 
       {rows.length > 0 && (
         <>
-          <p className="text-sm text-muted">
+          <p className="text-base text-muted">
             {formatCount(meta?.total ?? rows.length)}{' '}
             {(meta?.total ?? 0) === 1 ? 'entry' : 'entries'}, newest first
           </p>

@@ -90,7 +90,7 @@ function Seats({ cohort }: { cohort: Cohort }) {
 
   return (
     <div className="min-w-0">
-      <p className={cn('text-xs', tone)}>
+      <p className={cn('text-sm', tone)}>
         {seats.kind === 'OVERSUBSCRIBED' && (
           <AlertTriangle className="mr-1 inline size-3.5 align-[-2px]" aria-hidden="true" />
         )}
@@ -113,10 +113,10 @@ function CohortRow({ cohort }: { cohort: Cohort }) {
     <li className="flex flex-col gap-3 py-4 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-sm font-medium text-body">{cohort.name}</h3>
+          <h3 className="text-base font-medium text-body">{cohort.name}</h3>
           <span
             className={cn(
-              'rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap',
+              'rounded-full px-2.5 py-0.5 text-sm font-semibold whitespace-nowrap',
               COHORT_TONE[cohort.status]
             )}
           >
@@ -124,7 +124,7 @@ function CohortRow({ cohort }: { cohort: Cohort }) {
           </span>
         </div>
 
-        <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-subtle">
+        <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-subtle">
           <span className="flex items-center gap-1.5">
             <CalendarRange className="size-3.5" aria-hidden="true" />
             {formatDate(cohort.startDate)} to {formatDate(cohort.endDate)}
@@ -145,7 +145,7 @@ function CohortRow({ cohort }: { cohort: Cohort }) {
         </div>
 
         {cohort.status === 'CANCELLED' && cohort.cancellationReason && (
-          <p className="mt-1.5 text-xs text-danger-700">
+          <p className="mt-1.5 text-sm text-danger-700">
             Cancelled — {cohort.cancellationReason}
           </p>
         )}
@@ -205,19 +205,19 @@ export function ProgrammeDetail({ id }: { id: Id }) {
       <BackLink />
 
       <header>
-        <p className="text-[0.6875rem] font-semibold tracking-[0.14em] text-subtle uppercase">
+        <p className="text-xs font-semibold tracking-[0.14em] text-subtle uppercase">
           {PILLAR_LABELS[programme.pillar]}
         </p>
         <div className="mt-1.5 flex flex-wrap items-center gap-2.5">
           <h1 className="text-2xl font-semibold tracking-[-0.02em] text-body">{programme.name}</h1>
-          <span className="rounded-full bg-ink-100 px-2.5 py-1 text-xs font-semibold text-ink-600">
+          <span className="rounded-full bg-ink-100 px-2.5 py-1 text-sm font-semibold text-ink-600">
             {PROGRAMME_STATUS_LABELS[programme.status]}
           </span>
         </div>
         {programme.description && (
-          <p className="mt-2 max-w-prose text-sm text-muted">{programme.description}</p>
+          <p className="mt-2 max-w-prose text-base text-muted">{programme.description}</p>
         )}
-        <p className="mt-2 text-xs text-subtle">
+        <p className="mt-2 text-sm text-subtle">
           {programme.startDate || programme.endDate
             ? `Runs ${formatDate(programme.startDate)} to ${formatDate(programme.endDate)} · `
             : ''}
@@ -229,7 +229,7 @@ export function ProgrammeDetail({ id }: { id: Id }) {
 
       <section className="rounded-xl border border-line bg-surface p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-sm font-semibold text-body">
+          <h2 className="text-base font-semibold text-body">
             Cohorts
             {cohortCall.data && (
               <span className="ml-2 font-normal text-subtle">({cohortCall.data.meta.total})</span>
@@ -240,7 +240,7 @@ export function ProgrammeDetail({ id }: { id: Id }) {
             aria-pressed={enrollableOnly}
             onClick={() => setEnrollableOnly((v) => !v)}
             className={cn(
-              'min-h-9 rounded-full border px-3.5 text-xs font-semibold transition-colors',
+              'min-h-9 rounded-full border px-3.5 text-sm font-semibold transition-colors',
               enrollableOnly
                 ? 'border-brand-500 bg-brand-500 text-white'
                 : 'border-line bg-surface text-body hover:border-line-strong'
@@ -261,7 +261,7 @@ export function ProgrammeDetail({ id }: { id: Id }) {
         )}
 
         {cohortCall.data && cohorts.length === 0 && (
-          <p className="mt-3 text-sm text-muted">
+          <p className="mt-3 text-base text-muted">
             {enrollableOnly
               ? 'No cohort is taking enrolments right now.'
               : 'No cohorts have been scheduled for this programme yet.'}
@@ -284,7 +284,7 @@ function BackLink() {
   return (
     <Link
       href="/dashboard/programmes"
-      className="inline-flex w-fit items-center gap-1.5 text-sm text-muted underline-offset-2 hover:text-brand-600 hover:underline"
+      className="inline-flex w-fit items-center gap-1.5 text-base text-muted underline-offset-2 hover:text-brand-600 hover:underline"
     >
       <ArrowLeft className="size-4" aria-hidden="true" />
       Back to programmes

@@ -58,7 +58,7 @@ function ChannelButton({
           active ? 'bg-brand-50 text-brand-700' : 'text-body hover:bg-ink-50'
         )}
       >
-        <span className="flex items-center gap-1.5 text-sm font-medium">
+        <span className="flex items-center gap-1.5 text-base font-medium">
           {channel.isPrivate ? (
             <Lock className="size-3.5 shrink-0" aria-hidden="true" />
           ) : (
@@ -69,7 +69,7 @@ function ChannelButton({
             <Archive className="size-3.5 shrink-0 text-subtle" aria-hidden="true" />
           )}
         </span>
-        <span className="truncate text-xs text-subtle">
+        <span className="truncate text-sm text-subtle">
           {channel.lastMessageAt ? formatRelative(channel.lastMessageAt) : 'No messages yet'}
         </span>
       </button>
@@ -84,7 +84,7 @@ function MessageRow({ message }: { message: Message }) {
     return (
       <li className="px-1 py-2">
         {/* The slot is kept. A thread that silently closes up is a thread somebody edited. */}
-        <p className="text-xs text-subtle italic">
+        <p className="text-sm text-subtle italic">
           Message deleted {formatRelative(message.deletedAt)}.
         </p>
       </li>
@@ -94,14 +94,14 @@ function MessageRow({ message }: { message: Message }) {
   return (
     <li className="px-1 py-2.5">
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-        <span className="text-sm font-semibold text-body">{author?.name ?? 'Unknown'}</span>
-        {author?.role && <span className="text-xs text-subtle">{ROLE_LABELS[author.role]}</span>}
-        <span className="text-xs text-subtle" title={formatDateTime(message.createdAt)}>
+        <span className="text-base font-semibold text-body">{author?.name ?? 'Unknown'}</span>
+        {author?.role && <span className="text-sm text-subtle">{ROLE_LABELS[author.role]}</span>}
+        <span className="text-sm text-subtle" title={formatDateTime(message.createdAt)}>
           {formatRelative(message.createdAt)}
         </span>
-        {message.isEdited && <span className="text-xs text-subtle">· edited</span>}
+        {message.isEdited && <span className="text-sm text-subtle">· edited</span>}
       </div>
-      <p className="mt-0.5 text-sm whitespace-pre-wrap text-body">{message.body}</p>
+      <p className="mt-0.5 text-base whitespace-pre-wrap text-body">{message.body}</p>
     </li>
   );
 }
@@ -149,25 +149,25 @@ function Composer({ channel, onSent }: { channel: Channel; onSent: () => void })
           placeholder={`Message #${channel.slug}`}
           disabled={busy}
           className={cn(
-            'rounded-lg border bg-surface px-3 py-2 text-sm text-body placeholder:text-subtle focus:border-brand-400',
+            'rounded-lg border bg-surface px-3 py-2 text-base text-body placeholder:text-subtle focus:border-brand-400',
             blocked ? 'border-danger-500' : 'border-line hover:border-line-strong'
           )}
         />
       </label>
 
       {blocked ? (
-        <p className="flex items-start gap-1.5 text-xs font-medium text-danger-700">
+        <p className="flex items-start gap-1.5 text-sm font-medium text-danger-700">
           <ShieldAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
           {blocked}
         </p>
       ) : (
-        <p className="text-xs text-subtle">
+        <p className="text-sm text-subtle">
           Anything about one person belongs on their record, not here — this channel is
           visible to everyone in it.
         </p>
       )}
 
-      {fieldErrors.body && <p className="text-xs text-danger-700">{fieldErrors.body}</p>}
+      {fieldErrors.body && <p className="text-sm text-danger-700">{fieldErrors.body}</p>}
 
       <Button
         type="submit"
@@ -224,7 +224,7 @@ export function StaffBoard() {
     <div className="flex flex-col gap-5">
       <header>
         <h1 className="text-2xl font-semibold tracking-[-0.02em] text-body">Staff board</h1>
-        <p className="mt-1 max-w-prose text-sm text-muted">
+        <p className="mt-1 max-w-prose text-base text-muted">
           Internal channels for the team. Not a case-notes system — anything about a
           specific person belongs on their record.
         </p>
@@ -246,8 +246,8 @@ export function StaffBoard() {
       {channels.data && rows.length === 0 && (
         <div className="rounded-xl border border-line bg-surface px-6 py-12 text-center">
           <Hash className="mx-auto size-5 text-subtle" aria-hidden="true" />
-          <p className="mt-2 text-sm text-body">No channels yet.</p>
-          <p className="mx-auto mt-1 max-w-sm text-xs text-muted">
+          <p className="mt-2 text-base text-body">No channels yet.</p>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-muted">
             Private channels appear here only for their members.
           </p>
         </div>
@@ -266,7 +266,7 @@ export function StaffBoard() {
                 />
               ))}
             </ul>
-            <label className="mt-2 flex items-center gap-2 px-3 py-2 text-xs text-muted">
+            <label className="mt-2 flex items-center gap-2 px-3 py-2 text-sm text-muted">
               <input
                 type="checkbox"
                 checked={includeArchived}
@@ -280,7 +280,7 @@ export function StaffBoard() {
           {active && (
             <section className="flex flex-col gap-3 rounded-xl border border-line bg-surface p-5">
               <div>
-                <h2 className="flex items-center gap-2 text-sm font-semibold text-body">
+                <h2 className="flex items-center gap-2 text-base font-semibold text-body">
                   {active.isPrivate ? (
                     <Lock className="size-4 text-subtle" aria-hidden="true" />
                   ) : (
@@ -288,18 +288,18 @@ export function StaffBoard() {
                   )}
                   {active.name}
                   {active.isPrivate && (
-                    <span className="rounded-full bg-ink-100 px-2 py-0.5 text-[0.625rem] font-bold tracking-wide text-ink-600 uppercase">
+                    <span className="rounded-full bg-ink-100 px-2 py-0.5 text-xs font-bold tracking-wide text-ink-600 uppercase">
                       Private
                     </span>
                   )}
                   {active.isArchived && (
-                    <span className="rounded-full bg-ink-100 px-2 py-0.5 text-[0.625rem] font-bold tracking-wide text-ink-600 uppercase">
+                    <span className="rounded-full bg-ink-100 px-2 py-0.5 text-xs font-bold tracking-wide text-ink-600 uppercase">
                       Archived
                     </span>
                   )}
                 </h2>
                 {active.description && (
-                  <p className="mt-1 text-xs text-muted">{active.description}</p>
+                  <p className="mt-1 text-sm text-muted">{active.description}</p>
                 )}
               </div>
 
@@ -309,7 +309,7 @@ export function StaffBoard() {
               )}
 
               {thread.data && messages.length === 0 && (
-                <p className="py-6 text-center text-sm text-muted">
+                <p className="py-6 text-center text-base text-muted">
                   Nothing posted here yet.
                 </p>
               )}
@@ -325,7 +325,7 @@ export function StaffBoard() {
               {mayPost ? (
                 <Composer channel={active} onSent={thread.reload} />
               ) : (
-                <p className="text-xs text-subtle">
+                <p className="text-sm text-subtle">
                   Your role can read the board but not post to it.
                 </p>
               )}

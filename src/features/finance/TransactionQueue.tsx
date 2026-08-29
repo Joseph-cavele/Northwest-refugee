@@ -91,14 +91,14 @@ function ApprovalCell({
           <button
             type="button"
             onClick={() => onDecide(row, 'reject')}
-            className="min-h-9 rounded-full border border-line px-3 text-xs font-semibold text-body hover:border-line-strong hover:bg-ink-50"
+            className="min-h-9 rounded-full border border-line px-3 text-sm font-semibold text-body hover:border-line-strong hover:bg-ink-50"
           >
             Reject
           </button>
           <button
             type="button"
             onClick={() => onDecide(row, 'approve')}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-brand-500 px-3.5 text-xs font-semibold text-white hover:bg-brand-700"
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-brand-500 px-3.5 text-sm font-semibold text-white hover:bg-brand-700"
           >
             <Check className="size-3.5" aria-hidden="true" />
             Approve
@@ -110,7 +110,7 @@ function ApprovalCell({
       return (
         // Named as the control it is, not as a failure. Maker-checker working correctly is
         // the system doing its job, and the wording should not read like an error.
-        <span className="inline-flex items-center justify-end gap-1.5 text-xs text-muted">
+        <span className="inline-flex items-center justify-end gap-1.5 text-sm text-muted">
           <ShieldAlert className="size-3.5 shrink-0" aria-hidden="true" />
           You raised this — someone else approves it
         </span>
@@ -118,7 +118,7 @@ function ApprovalCell({
 
     case 'ABOVE_CEILING':
       return (
-        <span className="inline-flex items-center justify-end gap-1.5 text-xs text-accent-800">
+        <span className="inline-flex items-center justify-end gap-1.5 text-sm text-accent-800">
           <Lock className="size-3.5 shrink-0" aria-hidden="true" />
           Above your {formatZAR(standing.ceilingCents)} limit — the Executive Director
           approves this
@@ -127,7 +127,7 @@ function ApprovalCell({
 
     case 'NO_AUTHORITY':
       return (
-        <span className="text-xs text-subtle">Your role does not approve spend</span>
+        <span className="text-sm text-subtle">Your role does not approve spend</span>
       );
 
     case 'NO_PERMISSION':
@@ -179,7 +179,7 @@ export function TransactionQueue() {
     <div className="flex flex-col gap-5">
       <header>
         <h1 className="text-2xl font-semibold tracking-[-0.02em] text-body">Finance</h1>
-        <p className="mt-1 text-sm text-muted">
+        <p className="mt-1 text-base text-muted">
           {meta
             ? awaitingOnly
               ? `${formatCount(meta.total)} ${meta.total === 1 ? 'transaction' : 'transactions'} awaiting approval`
@@ -194,7 +194,7 @@ export function TransactionQueue() {
           aria-pressed={awaitingOnly}
           onClick={() => refilter(() => setAwaitingOnly((v) => !v))}
           className={cn(
-            'inline-flex min-h-10 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors',
+            'inline-flex min-h-10 items-center gap-2 rounded-full border px-4 text-base font-medium transition-colors',
             awaitingOnly
               ? 'border-brand-500 bg-brand-500 text-white'
               : 'border-line bg-surface text-body hover:border-line-strong'
@@ -204,12 +204,12 @@ export function TransactionQueue() {
           Awaiting approval
         </button>
 
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-base">
           <span className="sr-only">Filter by type</span>
           <select
             value={type}
             onChange={(event) => refilter(() => setType(event.target.value as TransactionType | ''))}
-            className="min-h-10 rounded-full border border-line bg-surface px-4 text-sm text-body hover:border-line-strong"
+            className="min-h-10 rounded-full border border-line bg-surface px-4 text-base text-body hover:border-line-strong"
           >
             <option value="">Every type</option>
             {TRANSACTION_TYPES.map((value) => (
@@ -220,7 +220,7 @@ export function TransactionQueue() {
           </select>
         </label>
 
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-base">
           <span className="sr-only">Filter by status</span>
           <select
             value={status}
@@ -230,7 +230,7 @@ export function TransactionQueue() {
             // "Awaiting approval" IS a status filter; offering a second one beside it
             // would guarantee an empty list on every choice but one.
             disabled={awaitingOnly}
-            className="min-h-10 rounded-full border border-line bg-surface px-4 text-sm text-body hover:border-line-strong disabled:text-ink-400"
+            className="min-h-10 rounded-full border border-line bg-surface px-4 text-base text-body hover:border-line-strong disabled:text-ink-400"
           >
             <option value="">Every status</option>
             {TRANSACTION_STATUSES.map((value) => (
@@ -255,12 +255,12 @@ export function TransactionQueue() {
 
       {data && rows.length === 0 && (
         <div className="rounded-xl border border-line bg-surface px-6 py-12 text-center">
-          <p className="text-sm text-body">
+          <p className="text-base text-body">
             {awaitingOnly
               ? 'Nothing is waiting for approval.'
               : 'No transactions match those filters.'}
           </p>
-          <p className="mx-auto mt-1 max-w-md text-xs text-muted">
+          <p className="mx-auto mt-1 max-w-md text-sm text-muted">
             A transaction is raised by one person and approved by another. Approving posts it
             to the ledger, after which it can only be corrected by a reversal.
           </p>
@@ -282,12 +282,12 @@ export function TransactionQueue() {
                     <span className="text-lg font-semibold tabular-nums text-body">
                       {formatZAR(row.amountCents)}
                     </span>
-                    <span className="text-xs text-subtle">
+                    <span className="text-sm text-subtle">
                       {TRANSACTION_TYPE_LABELS[row.type]}
                     </span>
                     <span
                       className={cn(
-                        'rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap',
+                        'rounded-full px-2.5 py-0.5 text-sm font-semibold whitespace-nowrap',
                         STATUS_TONE[row.status]
                       )}
                     >
@@ -295,9 +295,9 @@ export function TransactionQueue() {
                     </span>
                   </div>
 
-                  <p className="mt-1 text-sm text-body">{row.description}</p>
+                  <p className="mt-1 text-base text-body">{row.description}</p>
 
-                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-subtle">
+                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-subtle">
                     <span className="font-mono">{row.reference}</span>
                     {row.payee && <span>to {row.payee}</span>}
                     <span>{PAYMENT_METHOD_LABELS[row.method]}</span>
@@ -306,18 +306,18 @@ export function TransactionQueue() {
                   </div>
 
                   {row.status === 'REJECTED' && row.rejectionReason && (
-                    <p className="mt-1.5 text-xs text-danger-700">
+                    <p className="mt-1.5 text-sm text-danger-700">
                       Rejected — {row.rejectionReason}
                     </p>
                   )}
                   {row.status === 'REVERSED' && (
-                    <p className="mt-1.5 text-xs text-muted">
+                    <p className="mt-1.5 text-sm text-muted">
                       Reversed{row.reversalReason ? ` — ${row.reversalReason}` : ''}. The
                       original entry stands; the correction is a matching opposing entry.
                     </p>
                   )}
                   {row.reversalOf && (
-                    <p className="mt-1.5 text-xs text-muted">
+                    <p className="mt-1.5 text-sm text-muted">
                       This entry is itself a correction of an earlier one.
                     </p>
                   )}
@@ -338,7 +338,7 @@ export function TransactionQueue() {
                     <button
                       type="button"
                       onClick={() => setDecision({ row, kind: 'reverse' })}
-                      className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-line px-3 text-xs font-semibold text-body hover:border-line-strong hover:bg-ink-50"
+                      className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-line px-3 text-sm font-semibold text-body hover:border-line-strong hover:bg-ink-50"
                     >
                       <RotateCcw className="size-3.5" aria-hidden="true" />
                       Reverse
@@ -436,8 +436,8 @@ function DecisionDialog({
           <p className="text-lg font-semibold tabular-nums text-body">
             {formatZAR(row.amountCents)}
           </p>
-          <p className="text-sm text-body">{row.description}</p>
-          <p className="mt-0.5 font-mono text-xs text-subtle">{row.reference}</p>
+          <p className="text-base text-body">{row.description}</p>
+          <p className="mt-0.5 font-mono text-sm text-subtle">{row.reference}</p>
         </div>
 
         {kind === 'approve' && (
@@ -456,7 +456,7 @@ function DecisionDialog({
 
         {needsReason && (
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-body">Reason</span>
+            <span className="text-base font-medium text-body">Reason</span>
             <textarea
               value={reason}
               onChange={(event) => setReason(event.target.value)}
@@ -468,10 +468,10 @@ function DecisionDialog({
                   : 'What was wrong with the original? This stays on the ledger.'
               }
               disabled={busy}
-              className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-body placeholder:text-subtle hover:border-line-strong focus:border-brand-400"
+              className="rounded-lg border border-line bg-surface px-3 py-2 text-base text-body placeholder:text-subtle hover:border-line-strong focus:border-brand-400"
             />
             {fieldErrors.reason && (
-              <span className="text-xs text-danger-700">{fieldErrors.reason}</span>
+              <span className="text-sm text-danger-700">{fieldErrors.reason}</span>
             )}
           </label>
         )}

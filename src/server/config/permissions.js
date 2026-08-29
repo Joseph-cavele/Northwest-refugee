@@ -75,6 +75,19 @@ export const PERMISSIONS = Object.freeze({
   EVENT_CREATE: 'event:create',
   EVENT_READ: 'event:read',
   EVENT_UPDATE: 'event:update',
+  /*
+   * Publishing is its own permission, separate from event:update, because it is a
+   * different act with a different audience. Editing changes an internal record;
+   * publishing puts a time, a place and an invitation on a public website read by
+   * people who may then travel across Rustenburg to attend. The roles that plan
+   * events are not automatically the role answerable for what NWHR says in public.
+   */
+  EVENT_PUBLISH: 'event:publish',
+  /*
+   * A soft delete, and still the narrowest of the four: an event carries an
+   * attendance register, and a register is the evidence a funder is shown.
+   */
+  EVENT_DELETE: 'event:delete',
   EDUCATION_CREATE: 'education:create',
   EDUCATION_READ: 'education:read',
   EDUCATION_UPDATE: 'education:update',
@@ -133,6 +146,10 @@ export const ROLE_PERMISSIONS = Object.freeze({
     P.BENEFICIARY_READ,
     P.CASE_READ,
     P.BENEFICIARY_READ_SENSITIVE,
+    // Same reasoning as USER_INVITE above: intake must not stall when there is no Admin
+    // Officer in post, and an unverified beneficiary is somebody waiting for services.
+    // NOT a general widening — the finance omissions below are untouched and stay that way.
+    P.BENEFICIARY_VERIFY,
     P.DOCUMENT_READ,
     P.DOCUMENT_DOWNLOAD,
     P.SERVICE_REQUEST_READ,
@@ -140,6 +157,12 @@ export const ROLE_PERMISSIONS = Object.freeze({
     P.PROGRAMME_READ,
     P.ENROLLMENT_READ,
     P.EVENT_READ,
+    // The full set on events: the director is the role answerable for what appears on
+    // the organisation's public site, and publish and delete live nowhere else by default.
+    P.EVENT_CREATE,
+    P.EVENT_UPDATE,
+    P.EVENT_PUBLISH,
+    P.EVENT_DELETE,
     P.EDUCATION_READ,
     P.BUDGET_READ,
     P.BUDGET_APPROVE,
@@ -269,6 +292,9 @@ export const ROLE_PERMISSIONS = Object.freeze({
     P.EVENT_CREATE,
     P.EVENT_READ,
     P.EVENT_UPDATE,
+    // Comms is the role whose job is what the organisation says in public, so the
+    // publish switch belongs here as well as with the director. Delete does not.
+    P.EVENT_PUBLISH,
     P.CHATBOARD_READ,
     P.CHATBOARD_POST,
     P.CHATBOARD_MANAGE,

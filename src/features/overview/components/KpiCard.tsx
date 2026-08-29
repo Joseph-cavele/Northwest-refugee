@@ -27,12 +27,20 @@ const PERIOD_CAPTION: Record<DashboardCard['period'], string> = {
   MONTH_TO_DATE: 'This month so far',
 };
 
+/*
+ * The delta is a CHIP rather than loose coloured text.
+ *
+ * At 14px, a percentage in success-700 next to a percentage in danger-700 is two similar
+ * dark strings and the reader has to look at the arrow to tell them apart. A tinted pill
+ * gives the comparison an outline, which is what makes it findable when four of these cards
+ * sit in a row — and the arrow and the "vs" caption still carry the meaning without it.
+ */
 const DIRECTION_STYLE: Record<Direction, { className: string; Icon: typeof Minus }> = {
   // Colour is never the only signal: the arrow encodes direction, and the caption names
   // what the comparison is against.
-  good: { className: 'text-success-700', Icon: ArrowUpRight },
-  bad: { className: 'text-danger-700', Icon: ArrowDownRight },
-  neutral: { className: 'text-subtle', Icon: Minus },
+  good: { className: 'bg-success-50 text-success-700', Icon: ArrowUpRight },
+  bad: { className: 'bg-danger-50 text-danger-700', Icon: ArrowDownRight },
+  neutral: { className: 'bg-ink-100 text-muted', Icon: Minus },
 };
 
 export interface KpiCardProps {
@@ -54,54 +62,71 @@ export function KpiCard({ card, series = [], className }: KpiCardProps) {
   return (
     <article
       className={cn(
-        'group relative flex flex-col gap-3 overflow-hidden rounded-xl border border-line bg-surface p-5',
-        'transition-colors hover:border-line-strong',
+        'group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-surface',
         className
       )}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="truncate text-[0.6875rem] font-semibold tracking-[0.12em] text-subtle uppercase">
-            {card.label}
-          </h3>
+      <div className="flex flex-1 flex-col gap-3 p-5">
+        <h3 className="truncate text-xs font-semibold tracking-[0.12em] text-subtle uppercase">
+          {card.label}
+        </h3>
+
+        <div className="flex items-end justify-between gap-3">
           {/*
             * Proportional figures, not tabular. Tabular gives every digit the width of a
             * zero, which is right in a column and looks slack at display size.
             */}
-          <p className="mt-2 text-[1.75rem] leading-none font-semibold tracking-[-0.02em] text-body">
+          <p className="text-[2rem] leading-none font-semibold tracking-[-0.03em] text-body">
             {formatValueCompact(card.value, card.unit)}
           </p>
-        </div>
 
-        {points.length >= 2 && (
-          <Sparkline points={points} tone={direction} className="h-8 w-24 shrink-0" />
-        )}
-      </div>
-
-      <div className="mt-auto flex items-center gap-2 text-xs">
-        {delta ? (
-          <>
-            <span className={cn('inline-flex items-center gap-1 font-semibold', deltaClass)}>
+          {delta && (
+            <span
+              className={cn(
+                'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-sm font-semibold',
+                deltaClass
+              )}
+            >
               <Icon className="size-3.5" aria-hidden="true" />
               {formatDelta(delta)}
             </span>
-            <span className="truncate text-subtle">vs {delta.against}</span>
-          </>
-        ) : (
-          <span className="truncate text-subtle">
-            {PERIOD_CAPTION[card.period]}
-            {card.scoped && ' · your caseload'}
-          </span>
-        )}
+          )}
+        </div>
+
+        <div className="mt-auto flex items-center gap-2 text-sm">
+          {delta ? (
+            <span className="truncate text-subtle">
+              vs {delta.against}
+              {/*
+                * The caseload caption survives even when a delta is present. A coordinator's
+                * "12 open cases" covers their own work; the Executive Director's covers the
+                * organisation, and the number alone cannot say which.
+                */}
+              {card.scoped && ' · your caseload'}
+            </span>
+          ) : (
+            <span className="truncate text-subtle">
+              {PERIOD_CAPTION[card.period]}
+              {card.scoped && ' · your caseload'}
+            </span>
+          )}
+        </div>
       </div>
 
       {/*
-        * The caseload caption survives even when a delta has taken the row above. A
-        * coordinator's "12 open cases" covers their own work; the Executive Director's
-        * covers the organisation, and the number alone cannot say which.
+        * The trace, run full-bleed along the card's bottom edge rather than parked beside
+        * the figure.
+        *
+        * WHY IT MOVED: at 96px wide in the top-right it was competing with the number for
+        * the same corner, and neither had room. Along the base it has four times the width —
+        * which is what a shape needs to be readable as a shape — and it reads as the card's
+        * floor rather than as a second, smaller figure.
+        *
+        * It stays decorative. The gradient fades the trace out towards the top so it never
+        * sits behind the caption, and the exact value remains the large number above it.
         */}
-      {delta && card.scoped && (
-        <p className="-mt-2 text-xs text-subtle">Your caseload</p>
+      {points.length >= 2 && (
+        <Sparkline points={points} tone={direction} className="h-12 w-full" />
       )}
     </article>
   );

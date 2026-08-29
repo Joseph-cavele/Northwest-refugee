@@ -162,13 +162,25 @@ export const BENEFICIARY_STATUS_LABELS: Record<BeneficiaryStatus, string> = {
  * constants.js, which is where the server happens to declare it — noted because a
  * reader looking for the source of truth will check constants.js first and not find it.
  */
-export const CONSENT_METHODS = ['WHATSAPP', 'SIGNED_FORM', 'VERBAL_WITNESSED'] as const;
+export const CONSENT_METHODS = [
+  'WHATSAPP',
+  'SIGNED_FORM',
+  'VERBAL_WITNESSED',
+  'ONLINE_FORM',
+] as const;
 export type ConsentMethod = (typeof CONSENT_METHODS)[number];
 
 export const CONSENT_METHOD_LABELS: Record<ConsentMethod, string> = {
   WHATSAPP: 'Agreed on WhatsApp',
   SIGNED_FORM: 'Signed form',
   VERBAL_WITNESSED: 'Verbal, witnessed',
+  /*
+   * A tick on the public intake at /get-help, with no witness. Labelled as the weakest of the
+   * four on purpose: a screen showing this next to a record is telling a caseworker that the
+   * consent behind it was never watched by anybody, which is worth knowing before they act on
+   * it.
+   */
+  ONLINE_FORM: 'Online form, unwitnessed',
 };
 
 /**

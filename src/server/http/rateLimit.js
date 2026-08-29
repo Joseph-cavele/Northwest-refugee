@@ -87,6 +87,28 @@ function limiter(name, { windowMs, limit }) {
         throw AppError.tooManyRequests();
       }
     },
+
+    /**
+     * The same count, without the throw. `true` if this call is within the limit.
+     *
+     * FOR OUTBOUND CALLS, NOT INBOUND REQUESTS. `check()` refuses a caller and 429 is the
+     * right answer to them. This is for the other direction — deciding whether WE may call a
+     * paid third party — where there is no caller to refuse and the correct behaviour is to
+     * skip the call and take the fallback path the feature already has. Throwing there would
+     * turn a degraded answer into a failed request.
+     *
+     * Fails OPEN on an empty key, exactly as check() does and for the same reason.
+     */
+    allow(key) {
+      if (!key) {
+        logger.warn({ limiter: name }, 'rate limiter received an empty key — not limiting');
+        return true;
+      }
+
+      const result = hit(`${name}:${key}`, windowMs, limit);
+      if (!result.allowed) logger.warn({ limiter: name }, 'outbound rate limit reached');
+      return result.allowed;
+    },
   };
 }
 
@@ -125,6 +147,44 @@ export const sensitiveActionLimiter = limiter('sensitive', { windowMs: 15 * 60 *
  * used to spam a third party's inbox.
  */
 export const passwordResetLimiter = limiter('password-reset', { windowMs: 60 * 60 * 1000, limit: 5 });
+
+/*
+ * The public intake at /get-help. Five records an hour from one address.
+ *
+ * TIGHTER THAN IT LOOKS, AND ON PURPOSE. This is the only unauthenticated route that WRITES A
+ * PERSON INTO THE REGISTER, so the abuse it invites is not scraping but pollution: a script
+ * filling the verification queue with invented people, which costs a caseworker's day and
+ * buries the real arrivals. Five is generous for the honest case — a family coming in together
+ * would be four or five records from one phone on one connection — and useless for the other.
+ *
+ * IT INHERITS THE PER-INSTANCE PROBLEM AT THE TOP OF THIS FILE, and here it matters as much as
+ * it does for the credential limiters: N instances means N × 5. Move it to the shared store in
+ * the same change as those.
+ */
+export const intakeLimiter = limiter('intake', { windowMs: 60 * 60 * 1000, limit: 5 });
+
+/*
+ * OUTBOUND, NOT INBOUND: how often this deployment may call Gemini, whoever asked.
+ *
+ * `aiLimiter` already caps one visitor at twenty questions per fifteen minutes, which is the
+ * abuse case. THIS IS THE OTHER CASE — twenty visitors each behaving perfectly, plus the
+ * WhatsApp webhook, which is not usefully keyed by IP because every message arrives from Meta.
+ * Nothing in that picture is misbehaving and the outbound call rate can still land on Google's
+ * quota, and a 429 from Google degrades the help widget for everybody at once.
+ *
+ * THIRTY A MINUTE IS BELOW THE FREE TIER'S PUBLISHED RPM for flash-lite, deliberately: the
+ * point of a self-imposed limit is to stay under somebody else's, and hitting ours costs a
+ * menu where hitting theirs costs a 429 and a retry storm.
+ *
+ * It is consumed with `allow()` rather than `check()` — see the note there. Being over this
+ * limit is not an error; it is the same "no answer from the model" the guide already handles
+ * by showing its menu.
+ *
+ * PER-INSTANCE, like every limiter in this file. For this one that is much less serious than
+ * for the credential limiters: N instances means N × 30 against Google's quota, so it narrows
+ * the safety margin rather than removing the guard. It still belongs in the shared-store move.
+ */
+export const geminiLimiter = limiter('gemini', { windowMs: 60 * 1000, limit: 30 });
 
 /**
  * The IP+email key the credential limiters expect.

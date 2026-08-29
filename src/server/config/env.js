@@ -100,14 +100,46 @@ const envSchema = z.object({
   PAYSTACK_SECRET_KEY: z.string().optional(),
   PAYSTACK_PUBLIC_KEY: z.string().optional(),
 
+  /*
+   * PayPal. Three secrets and a mode flag, and the mode is the one that bites: PAYPAL_ENV
+   * defaults to sandbox, so a deployment that forgets it takes no real money rather than
+   * taking real money against test credentials. Only 'live' switches to the real API.
+   *
+   * PAYPAL_WEBHOOK_ID is not a secret in the usual sense — it identifies the webhook you
+   * registered in PayPal's dashboard — but without it a notification cannot be verified at
+   * all, and the handler refuses everything. Set it in the same change as the webhook URL.
+   */
+  PAYPAL_CLIENT_ID: z.string().optional(),
+  PAYPAL_CLIENT_SECRET: z.string().optional(),
+  PAYPAL_WEBHOOK_ID: z.string().optional(),
+  PAYPAL_ENV: z.enum(['sandbox', 'live']).default('sandbox'),
+
   // Resend (email)
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().default('NWHR <noreply@example.com>'),
   MAIL_REPLY_TO: z.string().optional(),
 
-  // OpenAI
+  // OpenAI — the WhatsApp bot's classifier.
   OPENAI_API_KEY: z.string().optional(),
   OPENAI_MODEL: z.string().default('gpt-4o-mini'),
+
+  /*
+   * Gemini — the website help guide's classifier.
+   *
+   * Two providers on purpose, not by accident. The guide and the WhatsApp bot reach the same
+   * `classify` contract and fall back the same way, so they can sit on different vendors
+   * without either knowing; and an outage or a suspended key at one vendor then costs the
+   * organisation one channel rather than both. The monthly ceiling below is shared and
+   * counted across both, because it is the organisation's money that is capped, not a
+   * vendor's.
+   *
+   * Flash-lite because the task is picking one label off a ten-item list. Verify the name
+   * against Google's current model list before deploying — a name this API does not
+   * recognise 404s, which this system reads as "no match" and answers with the menu, so it
+   * would degrade quietly rather than fail loudly.
+   */
+  GEMINI_API_KEY: z.string().optional(),
+  GEMINI_MODEL: z.string().default('gemini-2.5-flash-lite'),
 
   // Hard monthly ceiling on model spend, in RANDS. Once the running total for the calendar
   // month reaches this, classification stops and the WhatsApp bot and help guide fall back

@@ -20,6 +20,76 @@ export const EVENT_TYPES = Object.freeze([
 
 export const EVENT_STATUS = Object.freeze(['PLANNED', 'CONFIRMED', 'COMPLETED', 'CANCELLED']);
 
+/*
+ * PUBLICATION STATE IS NOT EVENT STATUS, AND MERGING THE TWO WOULD BE A BUG WITH A DATE
+ * AND A VENUE ON IT.
+ *
+ * `status` above answers "is this happening?" — planned, confirmed, done, called off. It is
+ * the operational lifecycle the attendance register hangs off, and it existed before there
+ * was a public website to put anything on.
+ *
+ * `publication.status` answers a different question: "may the public see it?" The two move
+ * independently in both directions. A CONFIRMED event may be deliberately unpublished
+ * because it is for an invited group. A PUBLISHED event may later be CANCELLED — and when
+ * that happens it must STAY on the public page, marked cancelled, rather than disappear.
+ * Somebody read the notice and may be planning to travel across Rustenburg for it; a silent
+ * removal sends them to a locked door. That rule is enforced in the public query, which
+ * filters on publication.status and never on status.
+ */
+export const PUBLICATION_STATUS = Object.freeze(['DRAFT', 'PUBLISHED']);
+
+/*
+ * How somebody attends. Distinct from `type` above, which is what KIND of event it is
+ * (awareness day, dialogue, training) and is an internal reporting dimension.
+ */
+export const EVENT_MODES = Object.freeze(['IN_PERSON', 'ONLINE', 'HYBRID']);
+
+/*
+ * What the public site is allowed to know about an event.
+ *
+ * A SEPARATE SUBDOCUMENT RATHER THAN LOOSE FIELDS, and that is the whole safety argument of
+ * this feature. The Event document also carries expected and recorded attendance, the
+ * capturing officer, the programme and pillar it reports against, and it is the parent of an
+ * attendance register holding gender and age bands. None of that may ever reach a public
+ * page. Keeping everything publishable inside one named block means the public serialiser
+ * is a whitelist of one object — `toPublicEvent` in the service — rather than a blacklist
+ * that has to be updated every time somebody adds a field up here and forgets.
+ */
+const publicationSchema = new Schema(
+  {
+    status: { type: String, enum: PUBLICATION_STATUS, default: 'DRAFT', index: true },
+    publishedAt: { type: Date, default: null },
+    publishedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+
+    /*
+     * The card image. A URL rather than an upload reference, because it may be either: a
+     * Cloudinary secure URL from the upload endpoint, or a path under /public for artwork
+     * that ships with the site. `imagePublicId` is set only for the former, and is what
+     * lets a replacement delete the asset it replaced instead of orphaning it.
+     */
+    imageUrl: { type: String, trim: true, maxlength: 600, default: '' },
+    imagePublicId: { type: String, trim: true, maxlength: 300, default: null },
+
+    /* One or two sentences for the listing card. The full description is on the event. */
+    summary: { type: String, trim: true, maxlength: 280, default: '' },
+
+    mode: { type: String, enum: EVENT_MODES, default: 'IN_PERSON' },
+    /* Where to join, when it is online. Never shown for an IN_PERSON event. */
+    onlineUrl: { type: String, trim: true, maxlength: 600, default: '' },
+
+    /* "Who the event is for" — plain language, and the field most likely to stop somebody
+       travelling to something that was never meant for them. */
+    audience: { type: String, trim: true, maxlength: 300, default: '' },
+
+    registrationInfo: { type: String, trim: true, maxlength: 1000, default: '' },
+    registrationUrl: { type: String, trim: true, maxlength: 600, default: '' },
+    /* A person and a way to reach them. Free text, because "ask for Grace at the desk" is
+       often the true answer and no structured field expresses it. */
+    contact: { type: String, trim: true, maxlength: 300, default: '' },
+  },
+  { _id: false }
+);
+
 // --- Event -------------------------------------------------------------------------
 
 const eventSchema = new Schema(
@@ -46,6 +116,8 @@ const eventSchema = new Schema(
     // every listing shows it and a per-row count would be a query each.
     recordedAttendance: { type: Number, min: 0, default: 0 },
 
+    publication: { type: publicationSchema, default: () => ({}) },
+
     organiser: { type: Schema.Types.ObjectId, ref: 'User', default: null, index: true },
     capturedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     deletedAt: { type: Date, default: null, index: true },
@@ -54,6 +126,12 @@ const eventSchema = new Schema(
 );
 
 eventSchema.index({ status: 1, startsAt: -1 });
+/*
+ * The public listing's only query: published, not deleted, soonest first. Compound and in
+ * this order so the index alone answers it — the public page is the one route here that is
+ * unauthenticated, so it is the one that can be hit hardest by something that is not a user.
+ */
+eventSchema.index({ 'publication.status': 1, deletedAt: 1, startsAt: 1 });
 eventSchema.index({ capturedBy: 1, startsAt: -1 });
 
 eventSchema.virtual('isPast').get(function isPast() {

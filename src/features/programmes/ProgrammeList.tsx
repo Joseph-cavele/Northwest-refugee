@@ -57,7 +57,7 @@ function Card({ programme }: { programme: Programme }) {
   return (
     <li className="flex h-full flex-col rounded-xl border border-line bg-surface p-4 transition-colors hover:border-line-strong">
       <div className="flex items-start justify-between gap-3">
-        <h3 className="min-w-0 text-sm font-semibold text-body">
+        <h3 className="min-w-0 text-base font-semibold text-body">
           <Link
             href={`/dashboard/programmes/${programme._id}`}
             className="underline-offset-2 hover:text-brand-600 hover:underline"
@@ -67,7 +67,7 @@ function Card({ programme }: { programme: Programme }) {
         </h3>
         <span
           className={cn(
-            'shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap',
+            'shrink-0 rounded-full px-2.5 py-1 text-sm font-semibold whitespace-nowrap',
             STATUS_TONE[programme.status]
           )}
         >
@@ -76,12 +76,12 @@ function Card({ programme }: { programme: Programme }) {
       </div>
 
       {programme.description && (
-        <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-muted">
+        <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted">
           {programme.description}
         </p>
       )}
 
-      <dl className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-subtle">
+      <dl className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-subtle">
         {(programme.startDate || programme.endDate) && (
           <div className="flex items-center gap-1.5">
             <CalendarRange className="size-3.5" aria-hidden="true" />
@@ -157,7 +157,7 @@ export function ProgrammeList() {
     <div className="flex flex-col gap-5">
       <header>
         <h1 className="text-2xl font-semibold tracking-[-0.02em] text-body">Programmes</h1>
-        <p className="mt-1 text-sm text-muted">
+        <p className="mt-1 text-base text-muted">
           {meta
             ? `${meta.total} ${meta.total === 1 ? 'programme' : 'programmes'} across ${grouped.length} ${grouped.length === 1 ? 'pillar' : 'pillars'}`
             : 'What this organisation runs, by pillar.'}
@@ -176,16 +176,16 @@ export function ProgrammeList() {
             value={term}
             onChange={(event) => setTerm(event.target.value)}
             placeholder="Search by name"
-            className="min-h-10 w-full rounded-full border border-line bg-surface pr-4 pl-9 text-sm text-body placeholder:text-subtle hover:border-line-strong focus:border-brand-400"
+            className="min-h-10 w-full rounded-full border border-line bg-surface pr-4 pl-9 text-base text-body placeholder:text-subtle hover:border-line-strong focus:border-brand-400"
           />
         </label>
 
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-base">
           <span className="sr-only">Filter by pillar</span>
           <select
             value={pillar}
             onChange={(event) => setPillar(event.target.value as ProgrammePillar | '')}
-            className="min-h-10 rounded-full border border-line bg-surface px-4 text-sm text-body hover:border-line-strong"
+            className="min-h-10 rounded-full border border-line bg-surface px-4 text-base text-body hover:border-line-strong"
           >
             <option value="">Every pillar</option>
             {PROGRAMME_PILLARS.map((value) => (
@@ -196,12 +196,12 @@ export function ProgrammeList() {
           </select>
         </label>
 
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-base">
           <span className="sr-only">Filter by status</span>
           <select
             value={status}
             onChange={(event) => setStatus(event.target.value as ProgrammeStatus | '')}
-            className="min-h-10 rounded-full border border-line bg-surface px-4 text-sm text-body hover:border-line-strong"
+            className="min-h-10 rounded-full border border-line bg-surface px-4 text-base text-body hover:border-line-strong"
           >
             <option value="">Every status</option>
             {PROGRAMME_STATUSES.map((value) => (
@@ -212,7 +212,7 @@ export function ProgrammeList() {
           </select>
         </label>
 
-        <label className="flex min-h-10 items-center gap-2 text-sm text-body">
+        <label className="flex min-h-10 items-center gap-2 text-base text-body">
           <input
             type="checkbox"
             checked={includeArchived}
@@ -236,12 +236,12 @@ export function ProgrammeList() {
 
       {data && rows.length === 0 && (
         <div className="rounded-xl border border-line bg-surface px-6 py-12 text-center">
-          <p className="text-sm text-body">
+          <p className="text-base text-body">
             {search || pillar || status
               ? 'No programmes match those filters.'
               : 'No programmes have been set up yet.'}
           </p>
-          <p className="mx-auto mt-1 max-w-sm text-xs text-muted">
+          <p className="mx-auto mt-1 max-w-sm text-sm text-muted">
             {search || pillar || status
               ? 'Archived programmes are hidden unless you include them.'
               : 'A programme belongs to one pillar permanently, because every report groups by it.'}
@@ -251,7 +251,7 @@ export function ProgrammeList() {
 
       {grouped.map((group) => (
         <section key={group.key}>
-          <h2 className="text-[0.6875rem] font-semibold tracking-[0.14em] text-subtle uppercase">
+          <h2 className="text-xs font-semibold tracking-[0.14em] text-subtle uppercase">
             {PILLAR_LABELS[group.key]}
             <span className="ml-2 font-normal tracking-normal normal-case">
               {group.programmes.length}
@@ -268,7 +268,7 @@ export function ProgrammeList() {
       {meta && meta.total > rows.length && (
         // The catalogue outgrew one request. Said plainly rather than silently showing a
         // subset under headings that imply completeness.
-        <p className="text-xs text-subtle">
+        <p className="text-sm text-subtle">
           Showing the first {rows.length} of {meta.total}. Narrow by pillar or status to see
           the rest.
         </p>

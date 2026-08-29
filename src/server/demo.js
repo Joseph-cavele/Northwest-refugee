@@ -40,7 +40,45 @@ import Metric, { METRICS } from './modules/reports/metric.model.js';
 
 const log = logger.child({ module: 'demo' });
 const MANIFEST = 'demoseeds';
-const DAYS = 45;
+/*
+ * HOW MUCH DEMO DATA TO WRITE, IN ONE PLACE.
+ *
+ * These were loop bounds scattered through eight hundred lines — `for (let i = 0; i < 40;`
+ * in the middle of the service-request block, and so on. Nobody could answer "how big is a
+ * demo seed" without reading the whole file, and nobody could make it smaller without
+ * hunting.
+ *
+ * THE NUMBERS ARE DELIBERATELY SMALL. A demo exists to be READ: to show what a screen looks
+ * like with real shapes in it, not to load-test a table. Forty service requests against
+ * twenty-four people made the queue screens a wall nobody scrolled to the bottom of, and the
+ * audit trail — which records every write this seed makes — grew past four hundred rows
+ * before anyone had used the system at all.
+ *
+ * WHAT MUST SURVIVE ANY FURTHER REDUCTION, because the screens are built to show it:
+ *
+ *   - at least one case in every status, and one escalated;
+ *   - one service request past its standard, so the overdue figure is not zero;
+ *   - a minor, so child-protection handling is visible;
+ *   - one permit already expired and one expiring inside thirty days;
+ *   - the three event outcomes: one that beat its target, one that fell short, one exact.
+ *
+ * Cutting a count below the number of distinct states a screen renders does not make the
+ * demo smaller, it makes it wrong — the reviewer concludes a state is unimplemented when it
+ * simply was not seeded.
+ */
+const VOLUME = Object.freeze({
+  /* Days of history. Drives one metric row per key per day, which is the largest table by
+     some distance — every day removed here removes seventeen rows. */
+  days: 30,
+  /* Beneficiaries, taken from the head of PEOPLE below. */
+  people: 12,
+  cases: 8,
+  serviceRequests: 16,
+  documents: 8,
+  donations: 10,
+});
+
+const DAYS = VOLUME.days;
 
 /*
  * Names are real Southern African given names paired with a marked surname. Realistic
@@ -124,7 +162,22 @@ async function build(manifest) {
 
   // --- people ---
   const beneficiaries = [];
-  for (let i = 0; i < PEOPLE.length; i += 1) {
+  /*
+   * The count is computed ONCE and every state below is expressed against it.
+   *
+   * WHY THAT MATTERS, learned the hard way: these were written as `i >= PEOPLE.length - 3`
+   * back when the loop ran to PEOPLE.length. The moment the volume came down to twelve, the
+   * loop stopped at twelve and the three minors sat at indices 21, 22 and 23 that were never
+   * reached — so the demo silently lost every minor, and with them the Minor flag, the
+   * guardian panel and the alarm for a minor with no guardian. Nothing failed; a whole
+   * branch of child-protection handling simply stopped being demonstrable.
+   *
+   * Any state seeded at a fixed index is a state that disappears the next time somebody
+   * makes the seed smaller. Tie them to the count.
+   */
+  const peopleCount = Math.min(VOLUME.people, PEOPLE.length);
+
+  for (let i = 0; i < peopleCount; i += 1) {
     const [firstName, surname] = PEOPLE[i];
     const registeredAt = dayAgo(between(0, DAYS));
 
@@ -134,7 +187,7 @@ async function build(manifest) {
      * minor has no guardian recorded. The model REFUSES to save a minor without one, which
      * is itself the rule being demonstrated.
      */
-    const minor = i >= PEOPLE.length - 3;
+    const minor = i >= peopleCount - 3;
     const dateOfBirth = minor
       ? new Date(2009 + between(0, 4), between(0, 11), between(1, 28))
       : new Date(1975 + between(0, 30), between(0, 11), between(1, 28));
@@ -187,7 +240,7 @@ async function build(manifest) {
             relationship: pick(['Mother', 'Father', 'Aunt', 'Grandmother']),
             phone: `+2783${String(2000000 + i).slice(0, 7)}`,
             // One placement rather than kin, so the "not a legal guardian" wording appears.
-            isLegalGuardian: i !== PEOPLE.length - 1,
+            isLegalGuardian: i !== peopleCount - 1,
           }
         : null,
       contact: { cellphone: `+2782${String(1000000 + i).slice(0, 7)}` },
@@ -207,10 +260,11 @@ async function build(manifest) {
   // --- cases. One ACTIVE case per person is a unique index, so open files take distinct
   //     people and the closed ones reuse whoever is left. ---
   const cases = [];
-  for (let i = 0; i < 16; i += 1) {
+  for (let i = 0; i < VOLUME.cases; i += 1) {
     const subject = beneficiaries[i % beneficiaries.length];
     const openedAt = new Date(Math.max(subject.registeredAt.getTime(), dayAgo(between(0, DAYS - 1)).getTime()));
-    const closed = i >= 10;
+    /* Roughly the last third closed, whatever the volume — see the note on peopleCount. */
+    const closed = i >= Math.max(1, Math.ceil(VOLUME.cases * 0.6));
 
     const doc = await Case.create({
       beneficiary: subject.doc._id,
@@ -240,7 +294,7 @@ async function build(manifest) {
 
   // --- service requests, spread across the pillars so the breakdown has shape ---
   const requests = [];
-  for (let i = 0; i < 40; i += 1) {
+  for (let i = 0; i < VOLUME.serviceRequests; i += 1) {
     const subject = pick(beneficiaries);
     const raisedAt = new Date(Math.max(subject.registeredAt.getTime(), dayAgo(between(0, DAYS - 1)).getTime()));
     const category = pick(CATEGORIES);
@@ -279,7 +333,7 @@ async function build(manifest) {
    */
   const DOC_KINDS = ['ASYLUM_PERMIT', 'PASSPORT', 'BIRTH_CERTIFICATE', 'PROOF_OF_ADDRESS', 'CONSENT_FORM'];
   const documents = [];
-  for (let i = 0; i < 14; i += 1) {
+  for (let i = 0; i < VOLUME.documents; i += 1) {
     const subject = beneficiaries[i % beneficiaries.length];
     const kind = DOC_KINDS[i % DOC_KINDS.length];
     const isImage = kind !== 'CONSENT_FORM';
@@ -368,13 +422,72 @@ async function build(manifest) {
    * gender, an age band and whether they had been before — no name, no number, nothing that
    * could single anybody out.
    */
+  /*
+   * `publish` MARKS THE ONES THAT ALSO GO ON THE PUBLIC NOTICEBOARD, and the spread is
+   * chosen so /news can be reviewed properly rather than just proved non-empty:
+   *
+   *   - two upcoming and published, so the listing has cards in it;
+   *   - one published and then CANCELLED, because that is the state most likely to be got
+   *     wrong later — a cancelled event must stay on the site, marked, rather than vanish
+   *     on somebody who is about to travel to it;
+   *   - one upcoming and left as a DRAFT, so "staff can see it and the public cannot" is
+   *     visible in the same run rather than taken on trust;
+   *   - the past ones stay unpublished, which is what an office that only started using
+   *     the noticeboard this month would actually look like.
+   *
+   * ONE PLACEHOLDER POSTER ON ALL THREE, AND IT IS A PLACEHOLDER — supplied artwork that
+   * depicts none of these events and is not a South African setting. It is here so the card
+   * layout can be reviewed with a picture in it rather than an empty frame.
+   *
+   * REPLACE IT BEFORE THIS SITE IS SEEN BY ANYONE OUTSIDE THE ORGANISATION. A picture that
+   * shows something other than the event it sits on is a small untruth on a page whose whole
+   * job is telling somebody where to be and when, and the same demo rule applies to artwork
+   * as to records: a demo that reads as real is a data-quality incident waiting to happen.
+   * design/event-image-prompts.md carries a brief per event type; staff upload the real
+   * poster from the dashboard.
+   */
+  /* The stand-in poster every seeded event shares. Not a depiction of any of them. */
+  const DEMO_EVENT_POSTER = '/cards-images/image.png';
+
   const EVENT_PLAN = [
-    { title: 'World Refugee Day commemoration (demo)', type: 'COMMEMORATION', daysAgo: 54, expected: 200, actual: 247, status: 'COMPLETED' },
-    { title: 'Documentation clinic, Tlhabane (demo)', type: 'OUTREACH', daysAgo: 26, expected: 120, actual: 86, status: 'COMPLETED' },
-    { title: 'Community dialogue on xenophobia (demo)', type: 'COMMUNITY_DIALOGUE', daysAgo: 12, expected: 80, actual: 80, status: 'COMPLETED' },
-    { title: 'Small business skills workshop (demo)', type: 'TRAINING', daysAgo: -18, expected: 40, actual: 0, status: 'CONFIRMED' },
-    { title: 'Winter clothing drive (demo)', type: 'AWARENESS', daysAgo: -35, expected: 150, actual: 0, status: 'PLANNED' },
-    { title: 'Stakeholder breakfast (demo)', type: 'STAKEHOLDER_MEETING', daysAgo: -5, expected: 25, actual: 0, status: 'CANCELLED' },
+    { title: 'World Refugee Day commemoration (demo)', type: 'COMMEMORATION', daysAgo: 54, expected: 50, actual: 62, status: 'COMPLETED' },
+    { title: 'Documentation clinic, Tlhabane (demo)', type: 'OUTREACH', daysAgo: 26, expected: 30, actual: 21, status: 'COMPLETED' },
+    { title: 'Community dialogue on xenophobia (demo)', type: 'COMMUNITY_DIALOGUE', daysAgo: 12, expected: 25, actual: 25, status: 'COMPLETED' },
+    {
+      title: 'Small business skills workshop (demo)',
+      type: 'TRAINING', daysAgo: -18, expected: 40, actual: 0, status: 'CONFIRMED',
+      publish: {
+        summary: 'A free one-day workshop on registering a small business, keeping records and pricing your work.',
+        audience: 'Anyone in Rustenburg thinking about starting or growing a small business.',
+        registrationInfo: 'Come to the office to put your name down, or phone. Places are limited to forty.',
+        contact: 'Ask for the skills coordinator at the front desk.',
+      },
+    },
+    {
+      title: 'Winter clothing drive (demo)',
+      type: 'AWARENESS', daysAgo: -35, expected: 60, actual: 0, status: 'PLANNED',
+      publish: {
+        summary: 'Warm clothing and blankets for families facing their first winter in Rustenburg.',
+        audience: 'Anyone who needs winter clothing, and anyone with clothing to donate.',
+        registrationInfo: 'No booking needed. Just come on the day.',
+        contact: 'Ask at the front desk.',
+      },
+    },
+    {
+      title: 'Stakeholder breakfast (demo)',
+      type: 'STAKEHOLDER_MEETING', daysAgo: -5, expected: 25, actual: 0, status: 'CANCELLED',
+      publish: {
+        summary: 'A morning meeting between NWHR, local government and partner organisations.',
+        audience: 'Invited partner organisations.',
+        registrationInfo: 'By invitation.',
+        contact: 'Ask at the front desk.',
+      },
+    },
+    {
+      title: 'Documentation clinic, Boitekong (demo)',
+      type: 'OUTREACH', daysAgo: -9, expected: 35, actual: 0, status: 'CONFIRMED',
+      // Left a DRAFT on purpose: this is the one that proves the public page is filtered.
+    },
   ];
 
   // Weighted so the age distribution has a believable shape rather than a flat one — the
@@ -392,7 +505,9 @@ async function build(manifest) {
     const startsAt = dayAgo(plan.daysAgo);
     const event = await Event.create({
       title: plan.title,
-      description: 'DEMO DATA — not a real event.',
+      description: plan.publish
+        ? `DEMO DATA — not a real event.\n\n${plan.publish.summary} Everything on this page is seeded sample content and the date is not a real one.`
+        : 'DEMO DATA — not a real event.',
       type: plan.type,
       pillar: pick(Object.values(PROGRAMME_PILLARS)),
       startsAt,
@@ -406,6 +521,26 @@ async function build(manifest) {
       ...(plan.status === 'CANCELLED'
         ? { cancellationReason: 'DEMO DATA — venue double-booked.' }
         : {}),
+      /*
+       * Written directly rather than through setPublication, because the service refuses to
+       * publish an incomplete notice and this seed supplies every field it asks for anyway.
+       * A seed that had to satisfy a workflow step by step would be asserting the workflow,
+       * which is a test's job and not a fixture's.
+       */
+      publication: plan.publish
+        ? {
+            status: 'PUBLISHED',
+            publishedAt: dayAgo(Math.max(1, plan.daysAgo + 14)),
+            publishedBy: actor._id,
+            // See the note above: a stand-in, not a depiction. Replace per event.
+            imageUrl: DEMO_EVENT_POSTER,
+            summary: plan.publish.summary,
+            mode: 'IN_PERSON',
+            audience: plan.publish.audience,
+            registrationInfo: plan.publish.registrationInfo,
+            contact: plan.publish.contact,
+          }
+        : { status: 'DRAFT' },
     });
     await backdate(Event, event._id, startsAt);
     events.push(event);
@@ -427,7 +562,14 @@ async function build(manifest) {
   }
   await record(manifest, 'events', events.map((e) => e._id));
   await record(manifest, 'eventparticipants', participantIds);
-  log.info({ events: events.length, participants: participantIds.length }, 'events');
+  log.info(
+    {
+      events: events.length,
+      published: EVENT_PLAN.filter((p) => p.publish).length,
+      participants: participantIds.length,
+    },
+    'events'
+  );
 
   // --- fundraising ---
   const donor = await Donor.create({
@@ -473,15 +615,17 @@ async function build(manifest) {
    *   than a queue somebody should work.
    */
   const donations = [];
-  for (let i = 0; i < 22; i += 1) {
+  for (let i = 0; i < VOLUME.donations; i += 1) {
     const receivedAt = dayAgo(between(0, DAYS));
     // Whole rands, in cents. Money is integer cents everywhere in this system.
     const amountCents = between(25, 900) * 10_000;
     const toSecond = i % 5 === 0;
 
     // Last three settled gifts carry no delivered receipt — the gap the screen surfaces.
-    const pending = i >= 19;
-    const receiptMissing = !pending && i >= 16;
+    /* The last two are still pending at the gateway; the two before them settled without a
+       receipt. Both expressed against the volume so neither vanishes when it is lowered. */
+    const pending = i >= Math.max(1, VOLUME.donations - 2);
+    const receiptMissing = !pending && i >= Math.max(1, VOLUME.donations - 4);
     const settledAt = pending ? null : receivedAt;
 
     const doc = await Donation.create({

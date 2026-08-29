@@ -7,7 +7,7 @@
  * `--color-brand-500` gives `bg-brand-500` and `var(--color-brand-500)` at once.
  *
  * THE PALETTE IS TAKEN FROM THE LOGO, not chosen. The five values marked "logo" below
- * were sampled from public/Assets/logo.png; the surrounding steps are tints and shades
+ * were sampled from public/images/logo.png; the surrounding steps are tints and shades
  * built around them. If the logo is ever redrawn, re-sample rather than eyeball — the
  * whole interface hangs off these five numbers.
  *
@@ -113,6 +113,25 @@
   --color-muted: var(--color-ink-600);
   --color-subtle: var(--color-ink-500);
 
+  /*
+   * --- the type scale, from src/Design/Design.md §5 -------------------------------------
+   *
+   * Recorded here because every section had been picking its own sizes, and three of them had
+   * drifted onto label sizes for body copy. These are RANGES rather than tokens — the spec
+   * gives spans, not fixed steps — so they are written as the clamp each role should use:
+   *
+   *   hero             clamp(2.25rem, 5vw, 4rem)     36 → 64px
+   *   page title       clamp(1.75rem, 4vw, 3rem)     28 → 48px
+   *   section heading  clamp(1.75rem, 3.5vw, 2.5rem) 28 → 40px
+   *   card heading     1.125rem – 1.5rem             18 – 24px
+   *   body             1rem / 1.5rem                 16px, comfortable leading
+   *   small            0.875rem                      14px
+   *
+   * BODY IS 16px AND NOT NEGOTIABLE. §5 sets it, §45 asks for sufficient contrast and large
+   * touch targets, and the audience reads this on cheap phones, often not in a first language.
+   * 14px is the "Small" role — captions, metadata, eyebrows — and never running text.
+   */
+
   /* --- typography ------------------------------------------------------------------ */
   /* System stack: no webfont request on a connection that may be a shared phone
      hotspot in Rustenburg. */
@@ -127,8 +146,156 @@
   --spacing-topbar: 3.5rem;
   --container-content: 80rem;
 
+  /* --- elevation --------------------------------------------------------------------
+   *
+   * A depth scale, because a screen of white rectangles separated only by a 1px grey line
+   * gives the eye nothing to rank: every panel claims the same importance and the reader
+   * has to read all of them to find the one that matters.
+   *
+   * TINTED WITH THE LOGO'S BLACK (#121417 at low alpha), not with pure black. A neutral
+   * grey shadow over a warm-neutral canvas reads as dirt; keying the shadow to the same
+   * ink the text uses keeps the card looking lifted rather than smudged.
+   *
+   * Two steps only, plus the hero's own. More than that and "slightly raised" stops being
+   * legible as a rank — which is the only thing elevation is here to communicate.
+   */
+  --shadow-card: 0 1px 2px 0 rgb(18 20 23 / 0.04), 0 1px 3px -1px rgb(18 20 23 / 0.06);
+  --shadow-lift: 0 2px 4px -2px rgb(18 20 23 / 0.06), 0 10px 20px -8px rgb(18 20 23 / 0.12);
+
+  /*
+   * The hero's shadow is BRAND-COLOURED, and it is the only coloured shadow in the system.
+   * A neutral drop shadow under a saturated blue panel reads as grey haze; keying it to
+   * brand-500 makes the panel look like it is casting its own light, which is what marks
+   * it as the one saturated thing on an otherwise black-and-white screen.
+   */
+  --shadow-hero: 0 12px 32px -14px rgb(52 76 183 / 0.55);
+
   /* --- motion ----------------------------------------------------------------------- */
   --ease-panel: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /*
+   * The headline's entrance, and the only motion on the front page.
+   *
+   * `--ease-reveal` is a quintic ease-out: it covers most of the distance early and settles
+   * slowly, which is what reads as "cinematic" rather than "slid in". It never overshoots —
+   * a curve that goes past its target and comes back is a bounce, and a bounce on a page
+   * somebody opens because they need a permit renewed is the wrong register.
+   *
+   * `lineRise` is the masked reveal. It moves 100% of the LINE's own height, so the text
+   * starts exactly one line below its resting place and is therefore fully hidden by the
+   * `overflow: hidden` wrapper around it — no magic pixel value, and it stays correct at
+   * every clamp size from mobile to desktop.
+   *
+   * `shine` sweeps a single white band across the accent word once. It animates
+   * background-position rather than moving an overlay, so the highlight is clipped to the
+   * glyphs themselves instead of passing over a rectangle of photograph behind them.
+   *
+   * BOTH ARE SWITCHED OFF BY `motion-reduce:animate-none` AT THE CALL SITE. Under that
+   * preference the text is simply there — the resting state of every element involved is
+   * the finished state, so nothing has to be undone.
+   */
+  --ease-reveal: cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-line-rise: lineRise 820ms var(--ease-reveal) both;
+  --animate-shine: shine 1100ms var(--ease-reveal) both;
+
+  /*
+   * `fadeUp` is the quieter cousin of lineRise, for things that are not headlines: a short
+   * 12px lift rather than a full line-height, and no mask. It is what the supporter row and
+   * its avatars use, so that element arrives after the headline has settled without
+   * competing with it.
+   */
+  --animate-fade-up: fadeUp 700ms var(--ease-reveal) both;
+
+  /*
+   * `fillTrack` grows a progress bar from nothing to whatever it is worth, once, when its
+   * card becomes the current one in the appeals carousel.
+   *
+   * WIDTH, NOT scaleX, and that is the deliberate choice. Scaling is the cheap way to animate
+   * a bar and it is wrong for this one: the fill has fully rounded ends, and scaling the X
+   * axis squashes those caps into ellipses for the whole 900ms. The bar is a few hundred
+   * pixels inside a fixed-height parent, so animating width reflows nothing outside it.
+   *
+   * Only a `from` keyframe. The resting width is an inline percentage the component computes,
+   * and naming a `to` here would mean repeating that number in CSS where it cannot see it —
+   * with `both`, the implicit target IS the underlying value, so the bar lands exactly where
+   * the data says and holds there.
+   */
+  --animate-fill-track: fillTrack 900ms var(--ease-reveal) both;
+
+  /*
+   * `pulseRing` is the halo behind a play button: a ring that swells out of the button and
+   * fades, twice the length of a heartbeat so it reads as an invitation rather than an alarm.
+   *
+   * It animates transform and opacity ONLY — both compositor properties, so an animation that
+   * never stops costs no layout and no paint. A ring animated by growing its width would keep
+   * the main thread busy for as long as the band is on screen.
+   *
+   * Switched off by `motion-safe:` at the call site. A thing that pulses forever is the first
+   * animation somebody with a vestibular disorder needs gone.
+   */
+  --animate-pulse-ring: pulseRing 2.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+
+  @keyframes lineRise {
+    from {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(0.75rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fillTrack {
+    from {
+      width: 0;
+    }
+  }
+
+  @keyframes pulseRing {
+    from {
+      opacity: 0.55;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(1.75);
+    }
+  }
+
+  /*
+   * BOTH ENDS MUST STAY INSIDE 0%–100%, and this is the trap.
+   *
+   * A percentage background-position resolves to `(element width - image width) * pct`. The
+   * image here is 300% wide, so the offset is `-2W * pct`: at 0% the element shows the
+   * gradient's left third, at 100% its right third. Anything outside that range scrolls the
+   * image clean off the element, which paints NOTHING — and with `color: transparent` doing
+   * the clipping, nothing painted means an invisible word.
+   *
+   * Both ends are gold (the white band sits at 50% of the gradient and is only in view
+   * mid-sweep), so the animation starts and finishes on the resting appearance. That also
+   * makes `both` safe: whatever it holds before the delay elapses and after it finishes is
+   * the word as it should look.
+   */
+  @keyframes shine {
+    from {
+      background-position: 100% 0;
+    }
+    to {
+      background-position: 0% 0;
+    }
+  }
 }
 
 @layer base {
@@ -169,6 +336,65 @@
 }
 
 @layer components {
+  /*
+   * The accent word in the hero headline, and the surface the shine sweeps across.
+   *
+   * WHY THIS IS A CLASS AND NOT UTILITIES: background-clip: text needs four declarations
+   * that have to agree with each other, and a `@supports` guard underneath them. Spread
+   * across arbitrary Tailwind values that is unreadable and, worse, silently breakable —
+   * drop one and the word disappears.
+   *
+   * THE GUARD IS LOAD-BEARING. `color: transparent` is what lets the gradient show through
+   * the glyphs; in a browser that cannot clip a background to text it would render the word
+   * INVISIBLE. So the transparent colour is applied only where the clip is supported, and
+   * the plain gold below is the fallback everywhere else.
+   *
+   * The gradient rests at `100% 0`, showing its right-hand third, which is solid gold. The
+   * white band sits at the gradient's midpoint and is only in view while the sweep is
+   * running — so the resting state, the finished state and the reduced-motion state are all
+   * the same thing, and the shine is something that happened rather than something that has
+   * to be undone.
+   *
+   * KEEP THAT VALUE INSIDE 0%–100%. See the note on @keyframes shine: outside that range the
+   * 300%-wide image scrolls off the element entirely and the transparent text paints nothing.
+   */
+  .headline-accent {
+    color: var(--color-gold-400);
+  }
+
+  @supports (-webkit-background-clip: text) or (background-clip: text) {
+    .headline-accent {
+      color: transparent;
+      background-image: linear-gradient(
+        100deg,
+        var(--color-gold-400) 0%,
+        var(--color-gold-400) 42%,
+        #ffffff 50%,
+        var(--color-gold-400) 58%,
+        var(--color-gold-400) 100%
+      );
+      background-size: 300% 100%;
+      background-position: 100% 0;
+      background-repeat: no-repeat;
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+  }
+
+  /*
+   * The mask a headline line rises out of.
+   *
+   * `overflow: hidden` on a line of text clips descenders — the p in "Papers" loses its
+   * tail. The padding gives them room and the equal negative margin takes that room back
+   * out of the layout, so the mask is invisible and the line spacing is untouched.
+   */
+  .line-mask {
+    display: block;
+    overflow: hidden;
+    padding-bottom: 0.16em;
+    margin-bottom: -0.16em;
+  }
+
   /* Keyboard users reach the table without tabbing through the whole sidebar. */
   .skip-link {
     position: absolute;
@@ -199,6 +425,156 @@
       var(--color-gold-400) 50% 75%,
       var(--color-danger-500) 75% 100%
     );
+  }
+
+  /*
+   * The light the hero panel appears to be lit by.
+   *
+   * WHY A CLASS: three stacked gradients that have to agree about their stops, which as
+   * arbitrary Tailwind values would be one unreadable string and silently breakable.
+   *
+   * WHY IT IS SAFE FOR CONTRAST: every layer is a WHITE overlay at very low alpha over
+   * brand-500, and white-over-blue can only lighten. The darkest point of the panel is
+   * therefore still brand-500 — where white text measures 7.3:1, AAA — and the lit corner
+   * is lighter still only in the region carrying no text. Never invert this to a black
+   * overlay: that would push the surface under the ratio the type was cleared at.
+   */
+  .hero-sheen {
+    background-image:
+      radial-gradient(
+        120% 140% at 100% 0%,
+        rgb(255 255 255 / 0.16) 0%,
+        rgb(255 255 255 / 0.04) 42%,
+        transparent 70%
+      ),
+      radial-gradient(90% 120% at 0% 100%, rgb(255 255 255 / 0.08) 0%, transparent 60%);
+  }
+
+  /*
+   * The ruling down each edge of the overview.
+   *
+   * WHAT IT IS. NWHR's register was a ruled book before it was this application — a margin
+   * down each side and a heading written into the line. The dashboard borrows that, because
+   * it is the artifact the organisation actually works from, and because a page of figures
+   * needs an architecture or it reads as a stack of unrelated white boxes.
+   *
+   * WHY A CLASS: a four-stop mask that has to agree with itself at both ends, which as an
+   * arbitrary Tailwind value would be one unreadable string and silently breakable.
+   *
+   * WHY IT FADES. An unmasked pair of rules boxes the page in, and a box then has to be
+   * closed top and bottom or it reads as unfinished. Fading both ends means the ruling is
+   * there where the content is and simply stops where it is not: framed, not enclosed.
+   */
+  .frame-edge {
+    background: var(--color-line);
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      black 4rem,
+      black calc(100% - 4rem),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      black 4rem,
+      black calc(100% - 4rem),
+      transparent 100%
+    );
+  }
+
+  /*
+   * The placeholder shown while the figures are in flight.
+   *
+   * A SHAPE, NOT A SPINNER, and the reason is honesty about layout rather than fashion: the
+   * skeleton occupies exactly the boxes the cards will occupy, so the screen does not jump
+   * when they arrive. A centred spinner tells the reader nothing about what is coming and
+   * then reflows the whole page underneath them.
+   *
+   * The sweep is switched off under reduced motion — the block alone still reads as pending.
+   */
+  .skeleton {
+    background-color: var(--color-ink-100);
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(255 255 255 / 0.65) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    background-repeat: no-repeat;
+    animation: skeletonSweep 1.4s ease-in-out infinite;
+  }
+
+  @keyframes skeletonSweep {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton {
+      animation: none;
+      background-image: none;
+    }
+  }
+
+  /*
+   * The torn panel edges in the get-involved band.
+   *
+   * WHAT THE SHAPE ACTUALLY IS. Each side panel is CLIPPED along a ragged line near its inner
+   * edge, and the centre panel is pulled underneath it, so what shows through the tear is the
+   * photograph next door rather than the page. That is the whole effect: an earlier version
+   * laid a straight gold strip on top of two rectangles, which reads as a border, not a tear.
+   *
+   * WHY PERCENTAGES AND NOT AN SVG clipPath. A polygon in percentage units is resolved against
+   * the element's own box, so one declaration fits a 380px panel on a phone and a 640px one on
+   * a desktop with no viewBox, no units and no second copy of the geometry. The gold line that
+   * traces it is an SVG polyline through the SAME numbers — see GetInvolved.tsx, and keep the
+   * two in step: they are one edge described twice, and a change to either alone shows up as a
+   * gold line floating beside the tear it is meant to be on.
+   *
+   * FROM lg ONLY. Below that the panels stack, and a vertical tear down the side of a stacked
+   * panel is a tear between a panel and nothing. The stacked layout gets a gold rule instead.
+   */
+
+  /*
+   * The arc the programme strip is laid out on.
+   *
+   * WHY A CLASS AND NOT AN INLINE TRANSFORM. The two values that vary per panel — how far it is
+   * rotated and how far it is dropped — are set as custom properties on each panel in the JSX,
+   * where the index is known. The transform that consumes them lives here, inside a media
+   * query, which is the part an inline style cannot do: below lg the panels are a plain
+   * horizontal scroller and the arc has to be switched OFF entirely rather than scaled down. A
+   * row of cards tilting 8 degrees on a 380px screen reads as a rendering fault.
+   *
+   * Rotation and translation only. Neither reflows anything, so a five-panel arc costs one
+   * composited layer per panel and no layout at all.
+   */
+  @media (width >= 64rem) {
+    .arc-panel {
+      transform: rotate(var(--arc-rotate, 0deg)) translateY(var(--arc-lift, 0px));
+    }
+
+    /* The panel being looked at comes off the arc and forward: upright, lifted, and slightly
+       larger. It is the only one in colour, so it needs to be the only one square to the
+       reader as well. */
+    .arc-panel[data-current='true'] {
+      transform: rotate(0deg) translateY(-0.75rem) scale(1.04);
+    }
+  }
+
+  @media (width >= 64rem) {
+    .torn-edge-right {
+      clip-path: polygon(0% 0%, 96.82% 0.0%, 99.56% 3.88%, 97.15% 7.48%, 95.27% 11.44%, 97.85% 15.17%, 94.75% 19.75%, 94.73% 22.86%, 98.22% 27.49%, 99.9% 29.82%, 97.99% 34.91%, 95.11% 38.96%, 97.26% 41.2%, 95.3% 43.58%, 94.37% 46.51%, 96.76% 50.1%, 97.21% 54.83%, 97.1% 58.95%, 96.85% 63.14%, 99.99% 66.17%, 99.07% 71.36%, 96.03% 75.68%, 95.88% 78.57%, 98.64% 80.98%, 99.11% 84.38%, 99.76% 87.74%, 94.2% 92.48%, 99.48% 95.31%, 99.89% 98.92%, 94.62% 100.0%, 0% 100%);
+    }
+
+    .torn-edge-left {
+      clip-path: polygon(100% 0%, 3.18% 0.0%, 0.44% 3.88%, 2.85% 7.48%, 4.73% 11.44%, 2.15% 15.17%, 5.25% 19.75%, 5.27% 22.86%, 1.78% 27.49%, 0.1% 29.82%, 2.01% 34.91%, 4.89% 38.96%, 2.74% 41.2%, 4.7% 43.58%, 5.63% 46.51%, 3.24% 50.1%, 2.79% 54.83%, 2.9% 58.95%, 3.15% 63.14%, 0.01% 66.17%, 0.93% 71.36%, 3.97% 75.68%, 4.12% 78.57%, 1.36% 80.98%, 0.89% 84.38%, 0.24% 87.74%, 5.8% 92.48%, 0.52% 95.31%, 0.11% 98.92%, 5.38% 100.0%, 100% 100%);
+    }
   }
 }
 

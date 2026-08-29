@@ -87,10 +87,10 @@ function CampaignCard({ campaign }: { campaign: Campaign }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-sm font-semibold text-body">{campaign.name}</h3>
+            <h3 className="text-base font-semibold text-body">{campaign.name}</h3>
             <span
               className={cn(
-                'rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap',
+                'rounded-full px-2.5 py-0.5 text-sm font-semibold whitespace-nowrap',
                 STATUS_TONE[campaign.status]
               )}
             >
@@ -98,7 +98,7 @@ function CampaignCard({ campaign }: { campaign: Campaign }) {
             </span>
           </div>
           {campaign.pillar && (
-            <p className="mt-0.5 text-xs text-subtle">{PILLAR_LABELS[campaign.pillar]}</p>
+            <p className="mt-0.5 text-sm text-subtle">{PILLAR_LABELS[campaign.pillar]}</p>
           )}
         </div>
 
@@ -107,7 +107,7 @@ function CampaignCard({ campaign }: { campaign: Campaign }) {
             {formatZAR(campaign.raisedCents)}
           </p>
           {standing.kind !== 'NO_TARGET' && (
-            <p className="text-xs text-subtle">
+            <p className="text-sm text-subtle">
               of {formatZAR(standing.targetCents)} · {standing.percent}%
             </p>
           )}
@@ -125,7 +125,7 @@ function CampaignCard({ campaign }: { campaign: Campaign }) {
         </div>
       )}
 
-      <p className={cn('mt-2 text-xs', tone)}>
+      <p className={cn('mt-2 text-sm', tone)}>
         {line}
         {campaign.endsAt && (
           <span className="text-subtle"> · closes {formatDate(campaign.endsAt)}</span>
@@ -166,7 +166,7 @@ export function FundraisingOverview() {
     <div className="flex flex-col gap-5">
       <header>
         <h1 className="text-2xl font-semibold tracking-[-0.02em] text-body">Fundraising</h1>
-        <p className="mt-1 text-sm text-muted">
+        <p className="mt-1 text-base text-muted">
           Campaigns, and the gifts that have actually cleared.
         </p>
       </header>
@@ -175,7 +175,7 @@ export function FundraisingOverview() {
 
       <section>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-body">
+          <h2 className="flex items-center gap-2 text-base font-semibold text-body">
             <Target className="size-4 text-subtle" aria-hidden="true" />
             Campaigns
             {campaigns.data && (
@@ -183,12 +183,12 @@ export function FundraisingOverview() {
             )}
           </h2>
 
-          <label className="flex items-center gap-2 text-sm">
+          <label className="flex items-center gap-2 text-base">
             <span className="sr-only">Filter by status</span>
             <select
               value={status}
               onChange={(event) => setStatus(event.target.value as CampaignStatus | '')}
-              className="min-h-9 rounded-full border border-line bg-surface px-3.5 text-sm text-body hover:border-line-strong"
+              className="min-h-9 rounded-full border border-line bg-surface px-3.5 text-base text-body hover:border-line-strong"
             >
               <option value="">Every status</option>
               {CAMPAIGN_STATUSES.map((value) => (
@@ -216,10 +216,10 @@ export function FundraisingOverview() {
         {campaigns.data && rows.length === 0 && (
           <div className="mt-3 rounded-xl border border-line bg-surface px-6 py-12 text-center">
             <HandCoins className="mx-auto size-5 text-subtle" aria-hidden="true" />
-            <p className="mt-2 text-sm text-body">
+            <p className="mt-2 text-base text-body">
               {status ? 'No campaigns match that status.' : 'No campaigns have been set up yet.'}
             </p>
-            <p className="mx-auto mt-1 max-w-sm text-xs text-muted">
+            <p className="mx-auto mt-1 max-w-sm text-sm text-muted">
               A campaign totals only donations that have settled — a pending gift is a
               promise, not funds.
             </p>
@@ -237,7 +237,7 @@ export function FundraisingOverview() {
 
       {mayReadDonations && recent.data && recent.data.data.length > 0 && (
         <section className="rounded-xl border border-line bg-surface p-5">
-          <h2 className="text-sm font-semibold text-body">Recent gifts</h2>
+          <h2 className="text-base font-semibold text-body">Recent gifts</h2>
           <ul className="mt-2 divide-y divide-line">
             {recent.data.data.map((donation) => {
               const standing = describeDonation({
@@ -247,17 +247,17 @@ export function FundraisingOverview() {
               return (
                 <li key={donation._id} className="flex flex-wrap items-center justify-between gap-3 py-2.5">
                   <div className="min-w-0">
-                    <p className="text-sm text-body">
+                    <p className="text-base text-body">
                       <span className="font-semibold tabular-nums">
                         {formatZAR(donation.amountCents)}
                       </span>
-                      <span className="ml-2 text-xs text-subtle">
+                      <span className="ml-2 text-sm text-subtle">
                         {DONATION_METHOD_LABELS[donation.method]}
                       </span>
                     </p>
-                    <p className="truncate font-mono text-xs text-subtle">{donation.reference}</p>
+                    <p className="truncate font-mono text-sm text-subtle">{donation.reference}</p>
                   </div>
-                  <div className="text-right text-xs">
+                  <div className="text-right text-sm">
                     <p className={cn('font-semibold', DONATION_TONE[donation.status])}>
                       {DONATION_STATUS_LABELS[donation.status]}
                     </p>

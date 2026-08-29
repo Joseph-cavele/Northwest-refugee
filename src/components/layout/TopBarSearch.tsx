@@ -103,7 +103,7 @@ export function TopBarSearch({ className }: { className?: string }) {
           onKeyDown={(event) => event.key === 'Escape' && setOpen(false)}
           placeholder="Search by name or reference code"
           className={cn(
-            'w-full rounded-full border border-line bg-canvas py-2 pr-9 pl-9 text-sm text-body',
+            'w-full rounded-full border border-line bg-canvas py-2 pr-9 pl-9 text-base text-body',
             'placeholder:text-subtle hover:border-line-strong focus:border-brand-400 focus:bg-surface',
             'transition-colors outline-none'
           )}
@@ -126,11 +126,11 @@ export function TopBarSearch({ className }: { className?: string }) {
           {/* Tested on `results` rather than `busy` so TypeScript narrows it — inside this
               panel `longEnough` is already true, so the two say the same thing. */}
           {!results ? (
-            <p className="px-4 py-3 text-sm text-subtle">Searching…</p>
+            <p className="px-4 py-3 text-base text-subtle">Searching…</p>
           ) : results.length === 0 ? (
             <div className="px-4 py-3">
-              <p className="text-sm text-body">Nobody matches “{query}”.</p>
-              <p className="mt-1 text-xs text-subtle">
+              <p className="text-base text-body">Nobody matches “{query}”.</p>
+              <p className="mt-1 text-sm text-subtle">
                 Search matches whole names and full reference codes, not partial words.
               </p>
             </div>
@@ -144,12 +144,12 @@ export function TopBarSearch({ className }: { className?: string }) {
                     className="flex items-center gap-3 px-4 py-2.5 hover:bg-ink-25"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-body">
+                      <p className="truncate text-base font-medium text-body">
                         {row.firstName} {row.lastName}
                       </p>
-                      <p className="truncate font-mono text-xs text-subtle">{row.referenceCode}</p>
+                      <p className="truncate font-mono text-sm text-subtle">{row.referenceCode}</p>
                     </div>
-                    <span className="shrink-0 rounded-full bg-ink-100 px-2 py-0.5 text-xs text-ink-600">
+                    <span className="shrink-0 rounded-full bg-ink-100 px-2 py-0.5 text-sm text-ink-600">
                       {BENEFICIARY_STATUS_LABELS[row.status]}
                     </span>
                   </Link>

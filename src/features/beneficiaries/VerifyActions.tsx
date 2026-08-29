@@ -117,7 +117,7 @@ export function VerifyActions({ id, status, onDone }: VerifyActionsProps) {
         {error && <ErrorAlert error={error} />}
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium text-body">
+          <span className="text-base font-medium text-body">
             Reason {rejecting ? '' : <span className="text-subtle">(optional)</span>}
           </span>
           <textarea
@@ -131,13 +131,13 @@ export function VerifyActions({ id, status, onDone }: VerifyActionsProps) {
                 : 'Anything worth recording about this decision.'
             }
             disabled={busy}
-            className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-body placeholder:text-subtle hover:border-line-strong focus:border-brand-400"
+            className="rounded-lg border border-line bg-surface px-3 py-2 text-base text-body placeholder:text-subtle hover:border-line-strong focus:border-brand-400"
           />
           {fieldErrors.reason && (
-            <span className="text-xs text-danger-700">{fieldErrors.reason}</span>
+            <span className="text-sm text-danger-700">{fieldErrors.reason}</span>
           )}
           {rejecting && !fieldErrors.reason && (
-            <span className="text-xs text-subtle">
+            <span className="text-sm text-subtle">
               Required. &ldquo;Rejected&rdquo; with no reason leaves the next officer nothing
               to act on.
             </span>

@@ -114,6 +114,28 @@ export function formatZARCompact(cents: number): string {
   return zarCompact.format(toRands(cents));
 }
 
+const zarWhole = new Intl.NumberFormat('en-ZA', {
+  style: 'currency',
+  currency: CURRENCY,
+  maximumFractionDigits: 0,
+});
+
+/**
+ * `formatRandsWhole(12000000)` → `R 120 000`. For a figure on the public site.
+ *
+ * NEITHER OF THE OTHER TWO IS RIGHT THERE, which is why this exists rather than reusing one.
+ * formatZAR keeps the cents, and nobody gives R120 000,00 — the two zeroes only lengthen a
+ * number somebody is scanning. formatZARCompact renders the same amount as "R 120,0K", and in
+ * en-ZA that comma is a decimal separator: a donor reads a figure with a fractional part
+ * where a dashboard reader knows to expect an abbreviation.
+ *
+ * Never for a receipt, a transaction row or an approval screen. Rounding away the cents is
+ * exactly what somebody signing off on spend must not be shown.
+ */
+export function formatRandsWhole(cents: number): string {
+  return zarWhole.format(toRands(cents));
+}
+
 /**
  * Split an amount across weights without losing a cent.
  *

@@ -49,6 +49,62 @@ function assertCanReadSensitive(actor) {
  * permit number arrives in the clear and is encrypted by the model's pre-save hook, so
  * this payload must never be logged.
  */
+/*
+ * The public intake at /get-help. Nobody is signed in, so everything a staff caller would be
+ * trusted to state is decided here instead.
+ *
+ * WHAT THIS FUNCTION ASSERTS RATHER THAN ACCEPTS:
+ *
+ *   intakeChannel   Always WEB. The person may say they are walking in or coming on a
+ *                   referral, and that is worth knowing — but it describes their INTENTION,
+ *                   where the channel field describes how this record actually arrived. An
+ *                   auditor reading WALK_IN on a record no member of staff ever touched would
+ *                   be reading a false statement. What they said goes into the notes, where a
+ *                   caseworker will see it and nobody will mistake it for provenance.
+ *
+ *   consent.method  Always ONLINE_FORM, and it is the honest label: a tick on a web page with
+ *                   no witness. `capturedBy` stays null because there genuinely was no
+ *                   capturer, which the model permits only for self-service channels.
+ *
+ *   status          createBeneficiary sets PENDING_VERIFICATION for every record, and a self-
+ *                   registered one has more reason to be there than most. Nothing about
+ *                   filling in a form verifies anybody.
+ *
+ * IT RETURNS THE REFERENCE CODE AND NOTHING ELSE. Returning the record would echo back a
+ * document containing everything just submitted, on an unauthenticated route — a trivial way
+ * to confirm what the server stored, and one line of code away from leaking it to whoever
+ * replayed the request.
+ */
+export async function submitPublicIntake(data, ctx = {}) {
+  const { arrivingBy, referredBy, notes, ...fields } = data;
+
+  // What they told us about how they are coming, kept where a caseworker reads it.
+  const arrival =
+    arrivingBy === 'REFERRAL'
+      ? `Says they were referred${referredBy ? ` by ${referredBy}` : ''}.`
+      : arrivingBy === 'WALK_IN'
+        ? 'Says they will come in to the office.'
+        : null;
+
+  const beneficiary = await createBeneficiary(
+    {
+      ...fields,
+      intakeChannel: 'WEB',
+      notes: [arrival, notes].filter(Boolean).join('\n\n'),
+      consent: {
+        given: true,
+        method: 'ONLINE_FORM',
+        givenAt: new Date(),
+        policyVersion: data.consent?.policyVersion ?? '1.0',
+      },
+    },
+    null,
+    ctx
+  );
+
+  return { referenceCode: beneficiary.referenceCode };
+}
+
 export async function createBeneficiary(data, actor, ctx = {}) {
   const beneficiary = new Beneficiary({
     ...data,

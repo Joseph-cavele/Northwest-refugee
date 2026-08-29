@@ -253,6 +253,22 @@ export const NOTIFICATION_PRIORITIES = Object.freeze(['LOW', 'MEDIUM', 'HIGH', '
 export const PAGINATION = Object.freeze({
   DEFAULT_LIMIT: 25,
   MAX_LIMIT: 100,
+
+  /*
+   * The one collection allowed past the cap, and the reason it is allowed.
+   *
+   * MAX_LIMIT protects rows about identifiable people — the register, the case files, the
+   * ledger. A Metric row is a date, a key and an integer; it names nobody, holds nothing
+   * select:false, and a year of one counter discloses less than the chart already drawn
+   * from it. Meanwhile a chart genuinely needs its whole window in one answer: the overview
+   * plots eight keys over ninety days, and at 100 rows it received the OLDEST hundred —
+   * `sort: date` ascending — so the lines stopped a fortnight short and said nothing about
+   * it.
+   *
+   * Named separately so raising it stays a decision about metrics rather than a decision
+   * about the register.
+   */
+  METRIC_MAX_LIMIT: 1000,
 });
 
 // Cron jobs and every human-facing timestamp are South African local time.

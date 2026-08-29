@@ -183,6 +183,92 @@ export function getBeneficiary(id: Id, signal?: AbortSignal): Promise<Beneficiar
   return api.get<BeneficiaryRecord>(`/beneficiaries/${id}`, { signal });
 }
 
+// --- intake ----------------------------------------------------------------------------
+
+/**
+ * What the register accepts for a new person.
+ *
+ * Dates are `YYYY-MM-DD` strings, not instants — the server parses them at UTC midnight so
+ * a date of birth never shifts a day because a browser sent local midnight. Not a
+ * formatting preference: a date of birth off by one is a beneficiary who is suddenly
+ * seventeen, and the guardian requirement turns on exactly that.
+ *
+ * `status` IS ABSENT AND CANNOT BE SENT. The service sets PENDING_VERIFICATION after
+ * spreading the payload, so a completed intake always lands in the verification queue and
+ * nobody can place someone straight into ACTIVE.
+ */
+export interface CreateBeneficiaryInput {
+  firstName: string;
+  lastName: string;
+  otherNames?: string | null;
+  gender: Gender;
+  /** YYYY-MM-DD. */
+  dateOfBirth: string;
+  nationality: string;
+  /** First entry is the preferred one — it decides whether an interpreter is needed. */
+  languages: SupportedLanguage[];
+
+  immigration: {
+    status: ImmigrationStatus;
+    /**
+     * Optional at EVERY immigration status, deliberately. Undocumented arrivals and asylum
+     * seekers still waiting on a s22 permit are precisely the people NWHR serves, and
+     * requiring a number would lock them out of the register entirely.
+     *
+     * Sent in the clear and encrypted at the model layer. Never log a body carrying it.
+     */
+    permitNumber?: string | null;
+    permitType?: string | null;
+    permitIssuedAt?: string | null;
+    permitExpiresAt?: string | null;
+  };
+
+  contact: {
+    cellphone: string;
+    email?: string | null;
+    address?: string;
+    suburb?: string;
+    city?: string;
+    province?: string;
+  };
+
+  household?: { size?: number; headOfHousehold?: boolean; dependants?: number };
+
+  /** Required by the schema AND the model when the date of birth makes them a minor. */
+  guardian?: {
+    fullName: string;
+    relationship: string;
+    phone?: string | null;
+    isLegalGuardian?: boolean;
+  } | null;
+
+  vulnerabilityFlags?: VulnerabilityFlag[];
+
+  /**
+   * `given` is a literal true and the endpoint refuses anything else. A record must never
+   * exist for somebody who declined — the WhatsApp bot discards the session rather than
+   * calling this at all, and the intake form does the same.
+   */
+  consent: {
+    given: true;
+    method: ConsentMethod;
+    policyVersion?: string;
+  };
+
+  intakeChannel?: IntakeChannel;
+  notes?: string;
+}
+
+/**
+ * Register someone.
+ *
+ * Lands as PENDING_VERIFICATION whatever is sent. Returns the created record, so a caller
+ * can route straight to it.
+ */
+export function createBeneficiary(input: CreateBeneficiaryInput): Promise<BeneficiaryRecord> {
+  return api.post<BeneficiaryRecord>('/beneficiaries', input);
+}
+
 // --- the sensitive fields ------------------------------------------------------------
 
 /**

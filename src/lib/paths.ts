@@ -21,8 +21,44 @@ export const PATHS = {
   resetPassword: '/reset-password',
   forgotPassword: '/forgot-password',
 
-  // --- public site ---
+  /*
+   * --- public site ---
+   *
+   * The marketing routes, declared here so the navigation has one source of truth and a
+   * rename is one edit rather than a search through JSX.
+   *
+   * `about`, `contact`, `donate`, `getHelp`, `programmes` AND `services` RESOLVE. The rest still 404. They are listed because SiteNav names them
+   * in the navigation bar. Do not treat a path being in this file as evidence that it
+   * resolves; check for a directory under src/app.
+   */
   getHelp: '/get-help',
+  about: '/about',
+  services: '/services',
+  programmes: '/programmes',
+  resources: '/resources',
+  news: '/news',
+  contact: '/contact',
+  donate: '/donate',
+  /**
+   * Where "Start Screening" goes: the public request-for-assistance flow, in which someone
+   * gives their details and asks for help. NOT the staff intake form — that is behind
+   * beneficiary:create and consent is captured by an officer sitting with the person.
+   */
+  screening: '/screening',
+
+  /*
+   * --- the legal footer, Design.md §60 ---
+   *
+   * These are not decoration on a site that stores immigration status, permit numbers and
+   * vulnerability flags. POPIA gives a data subject the right to know what is held and why,
+   * and a privacy notice is the ordinary place that lives — so `privacy` is the one route in
+   * this whole file that is arguably required rather than merely planned.
+   *
+   * They 404 like the rest today.
+   */
+  privacy: '/privacy',
+  terms: '/terms',
+  accessibility: '/accessibility',
 
   /*
    * The dashboard root. The eight role landing routes under it — /dashboard/executive,

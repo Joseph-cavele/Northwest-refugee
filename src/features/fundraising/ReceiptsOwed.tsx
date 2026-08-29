@@ -67,11 +67,11 @@ export function ReceiptsOwed() {
 
   return (
     <section className="rounded-xl border border-accent-200 bg-accent-50/40 p-5">
-      <h2 className="flex items-center gap-2 text-sm font-semibold text-body">
+      <h2 className="flex items-center gap-2 text-base font-semibold text-body">
         <MailWarning className="size-4 text-accent-700" aria-hidden="true" />
         {owed.length} {owed.length === 1 ? 'donor is' : 'donors are'} owed a tax certificate
       </h2>
-      <p className="mt-1 max-w-prose text-sm text-muted">
+      <p className="mt-1 max-w-prose text-base text-muted">
         These gifts are banked and their receipt numbers issued, but the email never reached
         the donor. They cannot claim the deduction until it does.
       </p>
@@ -90,7 +90,7 @@ export function ReceiptsOwed() {
       {data.meta.total > data.data.length && (
         // Said plainly. The endpoint has no unreceipted filter, so this is the most recent
         // page rather than every settled donation ever taken.
-        <p className="mt-3 text-xs text-subtle">
+        <p className="mt-3 text-sm text-subtle">
           Checked the {data.data.length} most recent settled donations of {data.meta.total}.
         </p>
       )}
@@ -117,18 +117,18 @@ function OwedRow({
   return (
     <li className="flex flex-wrap items-center justify-between gap-3 py-2.5">
       <div className="min-w-0">
-        <p className="text-sm text-body">
+        <p className="text-base text-body">
           <span className="font-semibold tabular-nums">{formatZAR(donation.amountCents)}</span>
           <span className="ml-2 text-muted">
             settled {formatDate(donation.settledAt ?? donation.receivedAt)}
           </span>
         </p>
-        <p className="truncate font-mono text-xs text-subtle">
+        <p className="truncate font-mono text-sm text-subtle">
           {donation.reference}
           {donation.receiptNumber && ` · ${donation.receiptNumber}`}
         </p>
         {error && (
-          <p className="mt-1 text-xs text-danger-700">
+          <p className="mt-1 text-sm text-danger-700">
             {/* A resend can fail the same way the first send did — most often because the
                 donor has no email address on file, which resending will never fix. */}
             {error.message}
@@ -140,7 +140,7 @@ function OwedRow({
         type="button"
         onClick={() => void submit(donation._id)}
         disabled={busy}
-        className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 text-xs font-semibold text-body hover:border-line-strong disabled:text-ink-400"
+        className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 text-sm font-semibold text-body hover:border-line-strong disabled:text-ink-400"
       >
         <Send className="size-3.5" aria-hidden="true" />
         {busy ? 'Sending…' : 'Send again'}

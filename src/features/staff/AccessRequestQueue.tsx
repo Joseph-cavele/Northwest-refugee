@@ -90,7 +90,7 @@ export function AccessRequestQueue() {
     <div className="flex flex-col gap-5">
       <header>
         <h1 className="text-2xl font-semibold tracking-[-0.02em] text-body">Access requests</h1>
-        <p className="mt-1 max-w-prose text-sm text-muted">
+        <p className="mt-1 max-w-prose text-base text-muted">
           People who have asked for a staff account. Approving creates the account and emails
           an activation link — they choose their own password from there.
         </p>
@@ -108,7 +108,7 @@ export function AccessRequestQueue() {
                 setPage(1);
               }}
               className={cn(
-                'min-h-10 rounded-full border px-4 text-sm font-medium transition-colors',
+                'min-h-10 rounded-full border px-4 text-base font-medium transition-colors',
                 status === value
                   ? 'border-brand-500 bg-brand-500 text-white'
                   : 'border-line bg-surface text-body hover:border-line-strong'
@@ -126,7 +126,7 @@ export function AccessRequestQueue() {
             setPage(1);
           }}
           className={cn(
-            'min-h-10 rounded-full border px-4 text-sm font-medium transition-colors',
+            'min-h-10 rounded-full border px-4 text-base font-medium transition-colors',
             status === ''
               ? 'border-brand-500 bg-brand-500 text-white'
               : 'border-line bg-surface text-body hover:border-line-strong'
@@ -150,10 +150,10 @@ export function AccessRequestQueue() {
       {data && rows.length === 0 && (
         <div className="rounded-xl border border-line bg-surface px-6 py-12 text-center">
           <UserPlus className="mx-auto size-5 text-subtle" aria-hidden="true" />
-          <p className="mt-2 text-sm text-body">
+          <p className="mt-2 text-base text-body">
             {status === 'PENDING' ? 'Nobody is waiting for a decision.' : 'Nothing here.'}
           </p>
-          <p className="mx-auto mt-1 max-w-sm text-xs text-muted">
+          <p className="mx-auto mt-1 max-w-sm text-sm text-muted">
             Requests arrive from the public “Request staff access” form.
           </p>
         </div>
@@ -161,7 +161,7 @@ export function AccessRequestQueue() {
 
       {rows.length > 0 && (
         <>
-          <p className="text-sm text-muted">
+          <p className="text-base text-muted">
             {formatCount(meta?.total ?? rows.length)}{' '}
             {(meta?.total ?? 0) === 1 ? 'request' : 'requests'}
             {status === 'PENDING' && ', oldest first'}
@@ -175,12 +175,12 @@ export function AccessRequestQueue() {
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="text-sm font-semibold text-body">
+                        <h2 className="text-base font-semibold text-body">
                           {request.firstName} {request.lastName}
                         </h2>
                         <span
                           className={cn(
-                            'rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap',
+                            'rounded-full px-2.5 py-0.5 text-sm font-semibold whitespace-nowrap',
                             STATUS_TONE[request.status]
                           )}
                         >
@@ -188,7 +188,7 @@ export function AccessRequestQueue() {
                         </span>
                       </div>
 
-                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-subtle">
+                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-subtle">
                         <span className="flex items-center gap-1.5">
                           <Mail className="size-3.5" aria-hidden="true" />
                           {request.email}
@@ -203,13 +203,13 @@ export function AccessRequestQueue() {
                       </div>
 
                       {request.motivation && (
-                        <p className="mt-2 max-w-prose text-xs text-muted italic">
+                        <p className="mt-2 max-w-prose text-sm text-muted italic">
                           “{request.motivation}”
                         </p>
                       )}
 
                       {request.status === 'APPROVED' && (
-                        <p className="mt-2 text-xs text-success-700">
+                        <p className="mt-2 text-sm text-success-700">
                           Approved {formatDateTime(request.reviewedAt)}
                           {request.grantedRole && ` as ${ROLE_LABELS[request.grantedRole]}`}.{' '}
                           {/*
@@ -222,7 +222,7 @@ export function AccessRequestQueue() {
                         </p>
                       )}
                       {request.status === 'REJECTED' && request.decisionNote && (
-                        <p className="mt-2 text-xs text-muted">
+                        <p className="mt-2 text-sm text-muted">
                           Rejected {formatDate(request.reviewedAt)} — {request.decisionNote}
                         </p>
                       )}
@@ -233,7 +233,7 @@ export function AccessRequestQueue() {
                         <button
                           type="button"
                           onClick={() => setDecision({ request, kind: 'reject' })}
-                          className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-line px-3.5 text-xs font-semibold text-body hover:border-line-strong hover:bg-ink-50"
+                          className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-line px-3.5 text-sm font-semibold text-body hover:border-line-strong hover:bg-ink-50"
                         >
                           <X className="size-3.5" aria-hidden="true" />
                           Reject
@@ -241,7 +241,7 @@ export function AccessRequestQueue() {
                         <button
                           type="button"
                           onClick={() => setDecision({ request, kind: 'approve' })}
-                          className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-brand-500 px-3.5 text-xs font-semibold text-white hover:bg-brand-700"
+                          className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-brand-500 px-3.5 text-sm font-semibold text-white hover:bg-brand-700"
                         >
                           <Check className="size-3.5" aria-hidden="true" />
                           Approve
@@ -353,7 +353,7 @@ function DecisionDialog({
             </Alert>
 
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-body">
+              <span className="text-base font-medium text-body">
                 Role{' '}
                 <span className="font-normal text-subtle">
                   (they asked for {ROLE_LABELS[request.requestedRole]})
@@ -363,7 +363,7 @@ function DecisionDialog({
                 value={role}
                 onChange={(event) => setRole(event.target.value as Role)}
                 disabled={busy || !options.data}
-                className="min-h-10 rounded-lg border border-line bg-surface px-3 text-sm text-body hover:border-line-strong focus:border-brand-400"
+                className="min-h-10 rounded-lg border border-line bg-surface px-3 text-base text-body hover:border-line-strong focus:border-brand-400"
               >
                 {grantableRoles.map((value) => (
                   <option key={value} value={value}>
@@ -372,17 +372,17 @@ function DecisionDialog({
                 ))}
               </select>
               {fieldErrors.role && (
-                <span className="text-xs text-danger-700">{fieldErrors.role}</span>
+                <span className="text-sm text-danger-700">{fieldErrors.role}</span>
               )}
               {actorRole !== 'EXECUTIVE_DIRECTOR' && (
-                <span className="text-xs text-subtle">
+                <span className="text-sm text-subtle">
                   Only an Executive Director can grant the Executive Director role.
                 </span>
               )}
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-body">
+              <span className="text-base font-medium text-body">
                 Note <span className="font-normal text-subtle">(optional, internal)</span>
               </span>
               <textarea
@@ -391,7 +391,7 @@ function DecisionDialog({
                 rows={2}
                 maxLength={500}
                 disabled={busy}
-                className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-body hover:border-line-strong focus:border-brand-400"
+                className="rounded-lg border border-line bg-surface px-3 py-2 text-base text-body hover:border-line-strong focus:border-brand-400"
               />
             </label>
           </>
@@ -402,7 +402,7 @@ function DecisionDialog({
             </Alert>
 
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-body">Reason</span>
+              <span className="text-base font-medium text-body">Reason</span>
               <textarea
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}
@@ -411,12 +411,12 @@ function DecisionDialog({
                 // Not an internal note. The wording matters because the applicant reads it.
                 placeholder="Emailed to the applicant. Write it to be read by them."
                 disabled={busy}
-                className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-body placeholder:text-subtle hover:border-line-strong focus:border-brand-400"
+                className="rounded-lg border border-line bg-surface px-3 py-2 text-base text-body placeholder:text-subtle hover:border-line-strong focus:border-brand-400"
               />
               {fieldErrors.reason ? (
-                <span className="text-xs text-danger-700">{fieldErrors.reason}</span>
+                <span className="text-sm text-danger-700">{fieldErrors.reason}</span>
               ) : (
-                <span className="text-xs text-subtle">
+                <span className="text-sm text-subtle">
                   Required. Somebody who asked to work here is owed an answer.
                 </span>
               )}

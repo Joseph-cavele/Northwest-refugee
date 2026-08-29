@@ -1,4 +1,4 @@
-import { classify, isOpenAIConfigured } from '../../config/openai.js';
+import { classify, isGeminiConfigured } from '../../config/gemini.js';
 import { GUIDE, DEFAULT_LANGUAGE } from './guide.content.js';
 
 // Free-text matching for the help widget.
@@ -9,6 +9,16 @@ import { GUIDE, DEFAULT_LANGUAGE } from './guide.content.js';
 //
 // This is the pattern CLAUDE.md sanctions — classify onto a fixed option list, echo the
 // match back for confirmation — applied to the website rather than the WhatsApp bot.
+//
+// GEMINI HERE, OPENAI ON WHATSAPP. config/gemini.js and config/openai.js expose the same
+// `classify` and the same null-on-anything-unexpected contract, so this file does not know
+// or care which vendor answered — and a suspended key or an outage at one of them costs the
+// organisation one channel instead of both. Swapping this import back is the whole change.
+//
+// THE MODEL STILL NEVER TALKS TO ANYBODY. Changing vendor does not change its role: it picks
+// one id off ROUTABLE_STEPS below and the person reads guide.content.js. It runs server-side
+// on this route, and the key belongs in the server environment — a browser-side call would
+// hand the key to every visitor and put a metered nonprofit endpoint on the open internet.
 
 // The screens a person may be routed to. Deliberately not every node: `register` and the
 // pillar pages are reachable by choosing an option, but routing someone straight there
@@ -86,7 +96,7 @@ export async function matchStep(text, language = DEFAULT_LANGUAGE) {
     return { stepId: 'help-safety', source: 'safety-rule', requiresConfirmation: false, matched: true };
   }
 
-  if (!input || !isOpenAIConfigured()) {
+  if (!input || !isGeminiConfigured()) {
     return { stepId: 'need-help', source: 'fallback', requiresConfirmation: false, matched: false };
   }
 

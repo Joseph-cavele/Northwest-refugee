@@ -24,6 +24,21 @@ const PRICING_USD_PER_MILLION = Object.freeze({
   'gpt-4.1-mini': { input: 0.4, output: 1.6 },
   'gpt-4.1-nano': { input: 0.1, output: 0.4 },
   'gpt-4.1': { input: 2, output: 8 },
+
+  /*
+   * Gemini, for the website guide. ROUNDED UP from Google's published list, deliberately —
+   * the rule at the top of this block is that an error must lean towards over-counting, and
+   * these rates move more often than this file is read. Check them when the budget is
+   * reviewed.
+   *
+   * These rows are not optional. Without them every Gemini call falls through to
+   * UNKNOWN_MODEL_PRICING at 2.50/10.00, which over-prices Flash-lite by roughly
+   * twenty-five times — a R300 ceiling would stop the guide at about R12 of real spend, and
+   * it would look exactly like a working budget while doing it.
+   */
+  'gemini-2.5-flash-lite': { input: 0.1, output: 0.4 },
+  'gemini-2.5-flash': { input: 0.3, output: 2.5 },
+  'gemini-2.0-flash': { input: 0.1, output: 0.4 },
 });
 
 // Priced as the dearest model on the list, so an unrecognised name over-estimates rather
@@ -31,7 +46,8 @@ const PRICING_USD_PER_MILLION = Object.freeze({
 const UNKNOWN_MODEL_PRICING = Object.freeze({ input: 2.5, output: 10 });
 
 /**
- * Strip the dated snapshot suffix OpenAI resolves an alias to.
+ * Strip the resolved-version suffix a provider returns in place of the alias that was asked
+ * for. Both vendors do this, in two different shapes.
  *
  * A request for 'gpt-4o-mini' comes back as 'gpt-4o-mini-2024-07-18'. Left alone that
  * breaks this file twice over, and both failures are silent:
@@ -43,10 +59,18 @@ const UNKNOWN_MODEL_PRICING = Object.freeze({ input: 2.5, output: 10 });
  *     configured one, so a single month's activity splits across two rows and the
  *     send-the-alert-once claim sits on the row that never sees the blocked calls.
  *
+ * Gemini reports `modelVersion`, which is the bare alias for some models and a three-digit
+ * revision for others — 'gemini-2.0-flash' asked for, 'gemini-2.0-flash-001' billed. Same
+ * two failures, so the same treatment. The revision is matched with an anchored three digits
+ * rather than \d+ so a real model name ending in a number is not truncated into a different
+ * one.
+ *
  * Normalising on the way in makes both paths agree on one bucket.
  */
 export function normaliseModel(model) {
-  return String(model ?? '').replace(/-\d{4}-\d{2}-\d{2}$/, '');
+  return String(model ?? '')
+    .replace(/-\d{4}-\d{2}-\d{2}$/, '')
+    .replace(/-\d{3}$/, '');
 }
 
 function pricingFor(model) {

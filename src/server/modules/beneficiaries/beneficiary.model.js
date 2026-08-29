@@ -17,6 +17,12 @@ const { Schema } = mongoose;
 // authenticate. They arrive through the WhatsApp bot or the front desk, and everything
 // here is special personal information under POPIA s26.
 
+/*
+ * Channels where the person entered their own details and no member of staff was present.
+ * These are the only ones allowed to leave `capturedBy` null — see the field below.
+ */
+const SELF_SERVICE_CHANNELS = ['WHATSAPP', 'WEB'];
+
 // --- Consent --------------------------------------------------------------------
 // Consent is captured BEFORE any personal data is stored. In the WhatsApp bot, declining
 // deletes the session with nothing persisted — a Beneficiary document only ever exists
@@ -27,9 +33,13 @@ const consentSchema = new Schema(
     given: { type: Boolean, required: true },
     givenAt: { type: Date, required: true, default: Date.now },
     // How consent was obtained, so it can be evidenced to the Information Regulator.
+    // ONLINE_FORM is consent ticked on the public intake at /get-help. It is a weaker
+     // evidence trail than a signed form or a witnessed verbal — nobody watched it happen —
+     // which is exactly why it is recorded as its own method rather than folded into one of
+     // the others. An auditor asking "how did this person consent" gets a true answer.
     method: {
       type: String,
-      enum: ['WHATSAPP', 'SIGNED_FORM', 'VERBAL_WITNESSED'],
+      enum: ['WHATSAPP', 'SIGNED_FORM', 'VERBAL_WITNESSED', 'ONLINE_FORM'],
       required: true,
     },
     // Version of the consent wording agreed to. Without this, a later change to the text
@@ -149,9 +159,10 @@ const beneficiarySchema = new Schema(
     // Who captured the record. Peer leaders and volunteers only ever see their own —
     // scopeToProgrammes() filters on exactly this field.
     //
-    // Null only for a WhatsApp self-registration, where there genuinely is no staff
-    // capturer: the person registered themselves. Every staff-entered record must name
-    // one, which is what the conditional keeps.
+    // Null only for a SELF-REGISTRATION, where there genuinely is no staff capturer: the
+    // person registered themselves, through the WhatsApp bot or the public form at
+    // /get-help. Every staff-entered record must still name one, which is what the
+    // conditional keeps.
     capturedBy: {
       type: Schema.Types.ObjectId,
       ref: 'User',
@@ -159,7 +170,7 @@ const beneficiarySchema = new Schema(
       index: true,
       required: [
         function staffCaptureNeedsACapturer() {
-          return this.intakeChannel !== 'WHATSAPP';
+          return !SELF_SERVICE_CHANNELS.includes(this.intakeChannel);
         },
         'capturedBy is required for a staff-captured record',
       ],

@@ -61,7 +61,7 @@ export function RatioGauge({
   if (total <= 0) {
     return (
       <div className={cn('grid min-h-52 place-items-center px-6 text-center', className)}>
-        <p className="max-w-[22ch] text-sm text-muted">
+        <p className="max-w-[22ch] text-base text-muted">
           Nothing open right now, so there is no share to show.
         </p>
       </div>
@@ -104,17 +104,17 @@ export function RatioGauge({
             <p className="text-3xl leading-none font-semibold tracking-[-0.02em] text-body">
               {percent}%
             </p>
-            <p className="mt-1 text-xs text-subtle">{label}</p>
+            <p className="mt-1 text-sm text-subtle">{label}</p>
           </div>
         </div>
       </div>
 
       <div>
-        <p className="text-sm text-body">
+        <p className="text-base text-body">
           <span className="font-semibold">{formatCount(value)}</span> of{' '}
           <span className="font-semibold">{formatCount(total)}</span>
         </p>
-        <p className="mt-1 max-w-[26ch] text-xs leading-relaxed text-muted">{caption}</p>
+        <p className="mt-1 max-w-[26ch] text-sm leading-relaxed text-muted">{caption}</p>
       </div>
     </div>
   );

@@ -38,7 +38,7 @@ function Bar({ label, value, total }: { label: string; value: number; total: num
 
   return (
     <div className="flex items-center gap-3 py-1">
-      <span className="w-24 shrink-0 text-xs text-subtle">{label}</span>
+      <span className="w-24 shrink-0 text-sm text-subtle">{label}</span>
       <span className="min-w-0 flex-1">
         {/* Reinforcement only. aria-hidden because the count beside it is the real value —
             a screen reader gains nothing from a second, wordless rendering. */}
@@ -52,7 +52,7 @@ function Bar({ label, value, total }: { label: string; value: number; total: num
           />
         </span>
       </span>
-      <span className="w-20 shrink-0 text-right text-xs tabular-nums text-body">
+      <span className="w-20 shrink-0 text-right text-sm tabular-nums text-body">
         {formatCount(value)}
         <span className="ml-1.5 text-subtle">{Math.round(share * 100)}%</span>
       </span>
@@ -76,7 +76,7 @@ function Distribution({
 
   return (
     <div>
-      <h3 className="text-[0.6875rem] font-semibold tracking-[0.12em] text-subtle uppercase">
+      <h3 className="text-xs font-semibold tracking-[0.12em] text-subtle uppercase">
         {title}
       </h3>
       {anything ? (
@@ -86,7 +86,7 @@ function Distribution({
           ))}
         </div>
       ) : (
-        <p className="mt-2 text-xs text-muted">Not recorded for this event.</p>
+        <p className="mt-2 text-sm text-muted">Not recorded for this event.</p>
       )}
     </div>
   );
@@ -95,11 +95,11 @@ function Distribution({
 function Tile({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
     <div className="rounded-lg border border-line px-3 py-2.5">
-      <p className="text-[0.6875rem] font-semibold tracking-[0.1em] text-subtle uppercase">
+      <p className="text-xs font-semibold tracking-[0.1em] text-subtle uppercase">
         {label}
       </p>
       <p className="mt-0.5 text-lg font-semibold tabular-nums text-body">{value}</p>
-      {hint && <p className="text-xs text-subtle">{hint}</p>}
+      {hint && <p className="text-sm text-subtle">{hint}</p>}
     </div>
   );
 }
@@ -119,11 +119,11 @@ export function AttendanceBreakdown({ eventId }: { eventId: Id }) {
   if (breakdown.total === 0) {
     return (
       <section className="rounded-xl border border-line bg-surface p-5">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-body">
+        <h2 className="flex items-center gap-2 text-base font-semibold text-body">
           <BarChart3 className="size-4 text-subtle" aria-hidden="true" />
           Who came
         </h2>
-        <p className="mt-2 text-sm text-muted">
+        <p className="mt-2 text-base text-muted">
           No attendance has been recorded yet. Attendees are counted by gender and age band —
           a community event register never asks for names.
         </p>
@@ -148,11 +148,11 @@ export function AttendanceBreakdown({ eventId }: { eventId: Id }) {
 
   return (
     <section className="rounded-xl border border-line bg-surface p-5">
-      <h2 className="flex items-center gap-2 text-sm font-semibold text-body">
+      <h2 className="flex items-center gap-2 text-base font-semibold text-body">
         <BarChart3 className="size-4 text-subtle" aria-hidden="true" />
         Who came
       </h2>
-      <p className="mt-1 text-xs text-subtle">
+      <p className="mt-1 text-sm text-subtle">
         Counted, not identified — this is the shape a report is written from.
       </p>
 

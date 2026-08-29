@@ -2,9 +2,11 @@
 
 import { useCallback } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, CalendarDays, MapPin, Users } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Globe, MapPin, Pencil, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useApi } from '@/hooks/useApi';
+import { useAuth } from '@/auth/useAuth';
+import { PERMISSIONS } from '@/auth/permissions';
 import { Alert, ErrorAlert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -26,6 +28,7 @@ import { formatDate, formatDateTime, formatTime } from '@/lib/dates';
  */
 
 export function EventDetail({ id }: { id: Id }) {
+  const { can } = useAuth();
   const { data, loading, error, reload } = useApi(
     useCallback((signal: AbortSignal) => getEvent(id, signal), [id]),
     [id]
@@ -106,18 +109,50 @@ export function EventDetail({ id }: { id: Id }) {
       <BackLink />
 
       <header>
-        <p className="text-[0.6875rem] font-semibold tracking-[0.14em] text-subtle uppercase">
+        <p className="text-xs font-semibold tracking-[0.14em] text-subtle uppercase">
           {EVENT_TYPE_LABELS[event.type]}
           {event.pillar && ` · ${PILLAR_LABELS[event.pillar]}`}
         </p>
         <div className="mt-1.5 flex flex-wrap items-center gap-2.5">
           <h1 className="text-2xl font-semibold tracking-[-0.02em] text-body">{event.title}</h1>
-          <span className="rounded-full bg-ink-100 px-2.5 py-1 text-xs font-semibold text-ink-600">
+          <span className="rounded-full bg-ink-100 px-2.5 py-1 text-sm font-semibold text-ink-600">
             {EVENT_STATUS_LABELS[event.status]}
           </span>
+
+          {/*
+            * Whether the public can see this, stated on the record rather than only on the
+            * edit form. Somebody looking at an event to answer a question about it needs to
+            * know whether it is on the website before they answer.
+            */}
+          {event.publication?.status === 'PUBLISHED' ? (
+            <a
+              href={`/news/${event._id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-full bg-success-50 px-2.5 py-1 text-sm font-semibold text-success-700 underline-offset-4 hover:underline"
+            >
+              <Globe className="size-3.5" aria-hidden="true" />
+              Live on the site
+              <span className="sr-only">(opens the public page in a new tab)</span>
+            </a>
+          ) : (
+            <span className="rounded-full bg-ink-100 px-2.5 py-1 text-sm font-semibold text-ink-600">
+              Draft
+            </span>
+          )}
+
+          {can(PERMISSIONS.EVENT_UPDATE) && (
+            <Link
+              href={`/dashboard/events/${event._id}/edit`}
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 underline-offset-4 hover:underline"
+            >
+              <Pencil className="size-3.5" aria-hidden="true" />
+              Edit
+            </Link>
+          )}
         </div>
 
-        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-subtle">
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-subtle">
           <span className="flex items-center gap-1.5">
             <CalendarDays className="size-3.5" aria-hidden="true" />
             {formatDateTime(event.startsAt)}
@@ -139,7 +174,7 @@ export function EventDetail({ id }: { id: Id }) {
         </div>
 
         {event.description && (
-          <p className="mt-3 max-w-prose text-sm text-muted">{event.description}</p>
+          <p className="mt-3 max-w-prose text-base text-muted">{event.description}</p>
         )}
       </header>
 
@@ -150,13 +185,13 @@ export function EventDetail({ id }: { id: Id }) {
       )}
 
       <section className="rounded-xl border border-line bg-surface p-5">
-        <h2 className="text-[0.6875rem] font-semibold tracking-[0.14em] text-subtle uppercase">
+        <h2 className="text-xs font-semibold tracking-[0.14em] text-subtle uppercase">
           Turnout
         </h2>
         <p className={cn('mt-1.5 text-[1.375rem] leading-tight font-semibold tracking-[-0.015em]', tone)}>
           {headline}
         </p>
-        <p className="mt-1 max-w-prose text-sm text-muted">{detail}</p>
+        <p className="mt-1 max-w-prose text-base text-muted">{detail}</p>
         {/*
           * No bar. Turnout has no ceiling — 300 at a 200-person dialogue is a real outcome —
           * and a track that pins at 100% would hide the most interesting result there is.
@@ -165,7 +200,7 @@ export function EventDetail({ id }: { id: Id }) {
 
       <AttendanceBreakdown eventId={event._id} />
 
-      <p className="text-xs text-subtle">
+      <p className="text-sm text-subtle">
         Recorded {formatDate(event.createdAt)}.
       </p>
     </div>
@@ -176,7 +211,7 @@ function BackLink() {
   return (
     <Link
       href="/dashboard/events"
-      className="inline-flex w-fit items-center gap-1.5 text-sm text-muted underline-offset-2 hover:text-brand-600 hover:underline"
+      className="inline-flex w-fit items-center gap-1.5 text-base text-muted underline-offset-2 hover:text-brand-600 hover:underline"
     >
       <ArrowLeft className="size-4" aria-hidden="true" />
       Back to events

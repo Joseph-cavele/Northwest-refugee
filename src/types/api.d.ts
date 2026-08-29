@@ -68,7 +68,16 @@ export interface Paginated<T> {
 /** Query parameters every paginated list route accepts. */
 export interface ListQuery {
   page?: number;
-  /** Clamped to PAGINATION.MAX_LIMIT server-side regardless of what is sent. */
+  /**
+   * REJECTED, NOT CLAMPED, above the route's ceiling — zod's `.max()` refuses the request
+   * rather than trimming it, so an over-large limit is a 400 and not a short page. This
+   * comment used to say "clamped", which is how the overview came to ask for 1000 rows
+   * against a cap of 100 and silently draw no charts at all for weeks.
+   *
+   * The ceiling is PAGINATION.MAX_LIMIT (100) on every list route but one: the metrics
+   * series allows 1000, because a chart needs its whole window and a metric row holds no
+   * person. See the note in `api/v1/reports/metrics/route.js`.
+   */
   limit?: number;
   /** Mongoose sort string, e.g. `-createdAt`. */
   sort?: string;

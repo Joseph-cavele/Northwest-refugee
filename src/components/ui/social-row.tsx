@@ -38,12 +38,50 @@ const PLATFORMS: Record<SocialPlatform, PlatformMeta> = {
 export interface SocialRowProps {
   links: { platform: SocialPlatform; href: string }[];
   heading?: string;
+  /**
+   * Bare icons, no heading, colours inherited from the caller.
+   *
+   * For a dense strip — a dark utility bar, a footer line — where the boxed light-surface
+   * treatment below would be wrong and a visible heading is a whole extra line. The
+   * accessible name stays on each link either way, so nothing is lost by dropping it.
+   */
+  inline?: boolean;
   className?: string;
 }
 
-export function SocialRow({ links, heading = `Follow ${ORG.name}`, className }: SocialRowProps) {
+export function SocialRow({
+  links,
+  heading = `Follow ${ORG.name}`,
+  inline = false,
+  className,
+}: SocialRowProps) {
   // Renders nothing rather than an empty heading when no profiles are configured.
   if (links.length === 0) return null;
+
+  if (inline) {
+    return (
+      <ul className={cn('flex items-center gap-3', className)}>
+        {links.map(({ platform, href }) => {
+          const { Icon, label } = PLATFORMS[platform];
+          return (
+            <li key={platform}>
+              <a
+                href={href}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={label}
+                // currentColor throughout, so one caller can put this on black and another
+                // on white without this file knowing about either.
+                className="grid size-7 place-items-center rounded-md transition-opacity hover:opacity-100 opacity-80"
+              >
+                <Icon className="size-4" />
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    );
+  }
 
   return (
     <div className={cn('flex flex-col gap-2', className)}>

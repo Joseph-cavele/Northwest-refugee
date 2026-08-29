@@ -76,6 +76,50 @@ export function uploadBuffer(buffer, { filename, folder = FOLDER, resourceType =
   });
 }
 
+// Public artwork lives under its own prefix, never beside the documents. A Cloudinary-side
+// retention or access rule applied to one must not reach the other by accident.
+const PUBLIC_FOLDER = 'nwhr/public-events';
+
+/**
+ * Upload a buffer as a PUBLICLY DELIVERABLE asset.
+ *
+ * THE ONE DELIBERATE EXCEPTION TO EVERYTHING ABOVE, AND IT IS NARROW ON PURPOSE.
+ *
+ * `uploadBuffer` exists to make an asset unreachable without a signed, expiring URL, because
+ * what it uploads is a refugee's permit scan or a child's birth certificate. This function
+ * does the opposite: `type: 'upload'` with public access, permanently addressable by anyone
+ * who has the link.
+ *
+ * That is correct for exactly one thing — the poster on a public event listing, which is
+ * artwork the organisation is choosing to broadcast. A signed URL cannot serve it: the
+ * signature expires, and a public page cannot re-sign on every render for visitors who are
+ * not logged in.
+ *
+ * NEVER CALL THIS WITH ANYTHING A BENEFICIARY GAVE US. If you are reaching for it from
+ * anywhere other than the event image route, the answer is `uploadBuffer`.
+ */
+export function uploadPublicImage(buffer, { filename } = {}) {
+  assertConfigured();
+
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: PUBLIC_FOLDER,
+        type: 'upload',
+        resource_type: 'image',
+        // Same reasoning as the private path: a filename in a URL is an information leak
+        // even when the asset itself is meant to be seen.
+        use_filename: false,
+        unique_filename: true,
+        overwrite: false,
+        context: filename ? { original_filename: filename } : undefined,
+      },
+      (err, result) => (err ? reject(err) : resolve(result))
+    );
+    stream.end(buffer);
+  });
+}
+
 /**
  * A signed, expiring download URL. Generate one per request and never persist it — a
  * stored URL outlives the permission check that produced it.

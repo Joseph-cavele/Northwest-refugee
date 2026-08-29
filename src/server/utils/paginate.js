@@ -9,6 +9,11 @@ import { PAGINATION } from '../config/constants.js';
  * a cron job or a service calling this directly would otherwise be able to pull the whole
  * beneficiary register into memory.
  *
+ * `maxLimit` RAISES THAT CEILING FOR ONE CALLER, and the caller has to ask. It exists for
+ * the metric series, which is non-personal by construction and useless in 100-row slices
+ * — see PAGINATION.METRIC_MAX_LIMIT. Do not pass it from anything that reads rows about
+ * people; the default is the protection.
+ *
  * NOTE ON `lean`: it is off by default and should stay off for anything holding personal
  * information. A lean result is a plain object, so the model's toJSON transform never
  * runs — and that transform is the last line of defence that strips permit numbers and
@@ -22,10 +27,11 @@ export async function paginateQuery(Model, filter = {}, options = {}) {
     select,
     populate,
     lean = false,
+    maxLimit = PAGINATION.MAX_LIMIT,
   } = options;
 
   const page = Math.max(1, Number(rawPage) || 1);
-  const limit = Math.min(Math.max(1, Number(rawLimit) || PAGINATION.DEFAULT_LIMIT), PAGINATION.MAX_LIMIT);
+  const limit = Math.min(Math.max(1, Number(rawLimit) || PAGINATION.DEFAULT_LIMIT), maxLimit);
   const skip = (page - 1) * limit;
 
   let query = Model.find(filter).sort(sort).skip(skip).limit(limit);

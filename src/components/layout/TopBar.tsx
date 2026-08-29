@@ -132,7 +132,7 @@ export function TopBar({ onOpenNav, onToggleCollapse, collapsed = false, title }
       )}
 
       {title && (
-        <h1 className="hidden shrink-0 truncate text-sm font-semibold text-body md:block">
+        <h1 className="hidden shrink-0 truncate text-base font-semibold text-body md:block">
           {title}
         </h1>
       )}
@@ -173,7 +173,7 @@ export function TopBar({ onOpenNav, onToggleCollapse, collapsed = false, title }
                   * The dot is the glance, the number is the fact. White on brand-500 is
                   * 7.3:1; the logo's orange would be 2.6:1 and fails outright here.
                   */}
-                <span className="absolute top-0.5 right-0.5 grid min-w-4 place-items-center rounded-full bg-brand-500 px-1 text-[0.625rem] leading-4 font-semibold text-white">
+                <span className="absolute top-0.5 right-0.5 grid min-w-4 place-items-center rounded-full bg-brand-500 px-1 text-xs leading-4 font-semibold text-white">
                   {count > 9 ? '9+' : count}
                 </span>
                 <span className="sr-only">{count} unread</span>
@@ -184,7 +184,7 @@ export function TopBar({ onOpenNav, onToggleCollapse, collapsed = false, title }
 
           {bellOpen && (
             <div className="absolute right-0 z-30 mt-2 w-[min(20rem,calc(100vw-1.5rem))] overflow-hidden rounded-xl border border-line bg-surface shadow-lg">
-              <p className="border-b border-line px-4 py-2.5 text-xs font-semibold tracking-wide text-subtle uppercase">
+              <p className="border-b border-line px-4 py-2.5 text-sm font-semibold tracking-wide text-subtle uppercase">
                 Notifications
               </p>
               <div className="max-h-96 overflow-y-auto">
@@ -193,7 +193,7 @@ export function TopBar({ onOpenNav, onToggleCollapse, collapsed = false, title }
               <Link
                 href="/dashboard/notifications"
                 onClick={() => setBellOpen(false)}
-                className="block border-t border-line px-4 py-2.5 text-center text-xs font-semibold text-brand-600 hover:bg-ink-25"
+                className="block border-t border-line px-4 py-2.5 text-center text-sm font-semibold text-brand-600 hover:bg-ink-25"
               >
                 See all notifications
               </Link>
@@ -211,16 +211,16 @@ export function TopBar({ onOpenNav, onToggleCollapse, collapsed = false, title }
           >
             {/* Initials, not a photograph. Staff records carry no avatar, and a generated
                 one would be decoration on a bar that is already dense. */}
-            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-brand-500 text-xs font-semibold text-white">
+            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-brand-500 text-sm font-semibold text-white">
               {initials || <User className="size-4" aria-hidden="true" />}
             </span>
             <span className="hidden text-left leading-tight lg:block">
               {/* Name and role, never the email: a screen in an open-plan office is read by
                   whoever walks past, and the role is what a colleague actually needs. */}
-              <span className="block max-w-28 truncate text-sm font-medium text-body">
+              <span className="block max-w-28 truncate text-base font-medium text-body">
                 {user?.name}
               </span>
-              <span className="block max-w-28 truncate text-xs text-subtle">
+              <span className="block max-w-28 truncate text-sm text-subtle">
                 {user ? ROLE_LABELS[user.role] : ''}
               </span>
             </span>
@@ -232,15 +232,15 @@ export function TopBar({ onOpenNav, onToggleCollapse, collapsed = false, title }
               className="absolute right-0 z-30 mt-2 w-56 overflow-hidden rounded-xl border border-line bg-surface shadow-lg"
             >
               <div className="border-b border-line px-4 py-3">
-                <p className="truncate text-sm font-medium text-body">{user?.name}</p>
-                <p className="truncate text-xs text-subtle">{user?.email}</p>
+                <p className="truncate text-base font-medium text-body">{user?.name}</p>
+                <p className="truncate text-sm text-subtle">{user?.email}</p>
               </div>
               <button
                 type="button"
                 role="menuitem"
                 onClick={handleSignOut}
                 disabled={signingOut}
-                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-body hover:bg-ink-50 disabled:text-ink-400"
+                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-base text-body hover:bg-ink-50 disabled:text-ink-400"
               >
                 <LogOut className="size-4" aria-hidden="true" />
                 {signingOut ? 'Signing out…' : 'Sign out'}

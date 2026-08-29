@@ -13,11 +13,15 @@ import * as service from '@/server/modules/reports/report.service';
  * organisation-wide by construction, so a coordinator reading it would see totals covering
  * programmes they are not assigned to. Held by the four roles whose job is the whole
  * organisation's numbers (ED, Finance, Comms, M&E).
+ *
+ * THE LIMIT CEILING IS PAGINATION.METRIC_MAX_LIMIT, NOT MAX_LIMIT — this is the one list
+ * route allowed past the shared cap, because a chart needs its whole window in one answer
+ * and a metric row names nobody. The reasoning is at the constant.
  */
 const listMetricsSchema = z
   .object({
     page: z.coerce.number().int().min(1).default(1),
-    limit: z.coerce.number().int().min(1).max(PAGINATION.MAX_LIMIT).default(PAGINATION.DEFAULT_LIMIT),
+    limit: z.coerce.number().int().min(1).max(PAGINATION.METRIC_MAX_LIMIT).default(PAGINATION.DEFAULT_LIMIT),
 
     // Constrained to the vocabulary: an unknown key would otherwise return an empty page,
     // which reads as "nothing happened" rather than "you asked for a metric that does not

@@ -1,15 +1,35 @@
 # Tests
 
-`npm test` runs what is ported. `vitest.config.ts` lists those files by name, so adding a
-suite means adding it there — an excluded test is visible debt, a silently skipped one is not.
+**There are two runners here, on purpose.** Neither is a leftover, and removing one to
+"tidy up" would silently stop a suite running.
 
-## Running now — 47 tests
+| Command | Runner | Files it matches |
+|---|---|---|
+| `npm test` | Vitest | `reportDates.test.js`, `jobs.test.js`, `**/*.unit.test.ts` |
+| `npm run test:jest` | Jest | `**/*.jest.test.ts` |
+
+The patterns cannot overlap, which is what keeps them apart: a file is Vitest's if it ends
+`.unit.test.ts` and Jest's if it ends `.jest.test.ts`. Both suites import `describe`, `it`
+and `expect` explicitly — from `vitest` and `@jest/globals` respectively — so the first line
+of a file says which runner owns it, and `tsc --noEmit` covers both without either runner's
+globals being switched on project-wide.
+
+Both load `setup.js`, so neither can reach a real database, a real gateway or a metered API.
+
+`vitest.config.ts` lists Vitest's files **by name**, so adding a suite means adding it there
+— an excluded test is visible debt, a silently skipped one is not. `jest.config.mjs` matches
+by suffix and explains what its ESM and alias settings are for; this package is `"type":
+"module"`, which is why `test:jest` runs Jest through `node --experimental-vm-modules`.
+
+## Running now
 
 | Suite | What it protects |
 |---|---|
 | `series.unit.test.ts` | The chart arithmetic: a STOCK is never summed across days, a FLOW is never compared against an unequal window, and a ratio against zero is undefined rather than "+100%". |
 | `alerts.unit.test.ts` | That an alert cannot reach a role whose cards it never received, and that severity comes from the share rather than the count. |
 | `reportDates.test.js` | SAST day boundaries, and that no metric is broken down by an axis that could identify a person. |
+| `eventPublication.unit.test.ts` | That an event cannot be published through a create or update body, that no link on a public page can carry a `javascript:` scheme, that the public query offers no way to name a draft, and that `event:delete` belongs to exactly one role. |
+| `money.jest.test.ts` (Jest) | Integer cents: a split always adds back up to the whole, nothing returns a fraction of a cent, and a bad amount is refused rather than quietly read as zero. |
 | `jobs.test.js` | The three scheduled jobs, every collaborator mocked. |
 
 ## Still to port — 23 route suites

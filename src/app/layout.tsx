@@ -1,7 +1,32 @@
 import type { Metadata, Viewport } from 'next';
+import { Inter } from 'next/font/google';
 import { AuthProvider } from '@/auth/AuthProvider';
 import { ORG } from '@/lib/site';
 import '@/styles/globals.css';
+
+/*
+ * Inter, because design/DESIGN.md specifies it and nothing else: "utilizes Inter
+ * exclusively to maintain a cohesive, systematic SaaS appearance", with the hierarchy
+ * carried by weight and scale rather than by mixing families.
+ *
+ * ONE FAMILY, FOUR WEIGHTS, and a variable rather than a body rule. DESIGN.md describes the
+ * PUBLIC site; the dashboard's type was a separate decision — the system stack, chosen so a
+ * staff screen opened over a shared phone hotspot costs no font request. Exposing Inter as
+ * `--font-ui` and letting the public components opt in keeps both true at once.
+ *
+ * next/font, NOT a Google CDN <link>: it downloads and subsets at build time and serves from
+ * this origin, so there is no third-party connection, nothing render-blocking, and no CSP
+ * exception to carve out when one is finally written.
+ *
+ * Nunito and Caveat are gone. They belonged to the earlier Charifund direction, which
+ * DESIGN.md replaces — its display type is Inter at 800 with tight tracking, not a script.
+ */
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['400', '600', '700', '800'],
+  variable: '--font-ui',
+  display: 'swap',
+});
 
 /*
  * The root layout — what main.tsx and App.tsx were between them.
@@ -28,7 +53,9 @@ export const metadata: Metadata = {
    * an application holding this data is out.
    */
   robots: { index: false, follow: false },
-  icons: { icon: '/Assets/logo.png' },
+  // The 128 rather than the master: a favicon is drawn at 16–32px, and pointing it at the
+  // 1.4 MB original made every page load it a second time purely for the browser tab.
+  icons: { icon: '/images/logo-128.png' },
 };
 
 export const viewport: Viewport = {
@@ -41,7 +68,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     // lang matters for a screen reader's pronunciation, and this is South African English.
-    <html lang="en-ZA">
+    <html lang="en-ZA" className={inter.variable}>
       <body>
         <AuthProvider>{children}</AuthProvider>
       </body>

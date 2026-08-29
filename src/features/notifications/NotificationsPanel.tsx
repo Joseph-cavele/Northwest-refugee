@@ -63,7 +63,7 @@ export interface NotificationsPanelProps {
 export function NotificationsPanel({ notifications, onMarkRead, pending }: NotificationsPanelProps) {
   if (notifications.length === 0) {
     return (
-      <p className="px-5 py-8 text-center text-sm text-muted">
+      <p className="px-5 py-8 text-center text-base text-muted">
         Nothing needs your attention.
       </p>
     );
@@ -94,15 +94,15 @@ export function NotificationsPanel({ notifications, onMarkRead, pending }: Notif
             <div className="min-w-0 flex-1">
               <p
                 className={cn(
-                  'truncate text-sm',
+                  'truncate text-base',
                   // Unread is weight, not colour — it survives grayscale and forced-colors.
                   row.isRead ? 'text-muted' : 'font-semibold text-body'
                 )}
               >
                 {row.title}
               </p>
-              <p className="truncate text-xs text-muted">{row.message}</p>
-              <p className="mt-0.5 text-xs text-subtle">
+              <p className="truncate text-sm text-muted">{row.message}</p>
+              <p className="mt-0.5 text-sm text-subtle">
                 {formatRelative(row.createdAt)}
                 {escalated && <span className="ml-2 font-semibold text-danger-700">Urgent</span>}
               </p>

@@ -62,12 +62,12 @@ function LineBar({ line }: { line: BudgetPositionLine }) {
     <div className="py-3">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <div className="min-w-0">
-          <span className="font-mono text-xs text-subtle">{line.code}</span>
-          <span className="ml-2 text-sm text-body">{line.description}</span>
+          <span className="font-mono text-sm text-subtle">{line.code}</span>
+          <span className="ml-2 text-base text-body">{line.description}</span>
         </div>
         <span
           className={cn(
-            'text-sm tabular-nums',
+            'text-base tabular-nums',
             overspent ? 'font-semibold text-danger-700' : 'text-body'
           )}
         >
@@ -102,7 +102,7 @@ function LineBar({ line }: { line: BudgetPositionLine }) {
         )}
       </div>
 
-      <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-subtle">
+      <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-0.5 text-sm text-subtle">
         <span>
           <span className="mr-1.5 inline-block size-2 rounded-full bg-brand-600 align-middle" aria-hidden="true" />
           {formatZAR(line.spentCents)} spent
@@ -134,7 +134,7 @@ function Position({ budgetId }: { budgetId: Id }) {
   if (!data) return null;
 
   if (data.lines.length === 0) {
-    return <p className="py-3 text-sm text-muted">This budget has no lines.</p>;
+    return <p className="py-3 text-base text-muted">This budget has no lines.</p>;
   }
 
   return (
@@ -160,17 +160,17 @@ function BudgetCard({ budget }: { budget: Budget }) {
       >
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-semibold text-body">{budget.name}</span>
+            <span className="text-base font-semibold text-body">{budget.name}</span>
             <span
               className={cn(
-                'rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap',
+                'rounded-full px-2.5 py-0.5 text-sm font-semibold whitespace-nowrap',
                 STATUS_TONE[budget.status]
               )}
             >
               {BUDGET_STATUS_LABELS[budget.status]}
             </span>
           </div>
-          <p className="mt-0.5 text-xs text-subtle">
+          <p className="mt-0.5 text-sm text-subtle">
             <span className="font-mono">{budget.reference}</span> · financial year{' '}
             {budget.financialYear} · {budget.lines.length}{' '}
             {budget.lines.length === 1 ? 'line' : 'lines'}
@@ -181,7 +181,7 @@ function BudgetCard({ budget }: { budget: Budget }) {
           <div className="text-right">
             <p
               className={cn(
-                'text-sm font-semibold tabular-nums',
+                'text-base font-semibold tabular-nums',
                 overspent ? 'text-danger-700' : 'text-body'
               )}
             >
@@ -189,7 +189,7 @@ function BudgetCard({ budget }: { budget: Budget }) {
                 ? `${formatZAR(Math.abs(budget.totalAvailableCents))} over`
                 : `${formatZAR(budget.totalAvailableCents)} left`}
             </p>
-            <p className="text-xs text-subtle">of {formatZAR(budget.totalAllocatedCents)}</p>
+            <p className="text-sm text-subtle">of {formatZAR(budget.totalAllocatedCents)}</p>
           </div>
           {open ? (
             <ChevronDown className="size-4 shrink-0 text-subtle" aria-hidden="true" />
@@ -228,17 +228,17 @@ export function BudgetList() {
     <div className="flex flex-col gap-5">
       <header>
         <h1 className="text-2xl font-semibold tracking-[-0.02em] text-body">Budgets</h1>
-        <p className="mt-1 text-sm text-muted">
+        <p className="mt-1 text-base text-muted">
           What was allocated, what is promised, and what is left.
         </p>
       </header>
 
-      <label className="flex w-fit items-center gap-2 text-sm">
+      <label className="flex w-fit items-center gap-2 text-base">
         <span className="sr-only">Filter by status</span>
         <select
           value={status}
           onChange={(event) => setStatus(event.target.value as BudgetStatus | '')}
-          className="min-h-10 rounded-full border border-line bg-surface px-4 text-sm text-body hover:border-line-strong"
+          className="min-h-10 rounded-full border border-line bg-surface px-4 text-base text-body hover:border-line-strong"
         >
           <option value="">Every status</option>
           {BUDGET_STATUSES.map((value) => (
@@ -263,10 +263,10 @@ export function BudgetList() {
       {data && rows.length === 0 && (
         <div className="rounded-xl border border-line bg-surface px-6 py-12 text-center">
           <Wallet className="mx-auto size-5 text-subtle" aria-hidden="true" />
-          <p className="mt-2 text-sm text-body">
+          <p className="mt-2 text-base text-body">
             {status ? 'No budgets match that status.' : 'No budgets have been set up yet.'}
           </p>
-          <p className="mx-auto mt-1 max-w-sm text-xs text-muted">
+          <p className="mx-auto mt-1 max-w-sm text-sm text-muted">
             Only an approved budget can carry commitments and spend.
           </p>
         </div>

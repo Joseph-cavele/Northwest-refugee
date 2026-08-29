@@ -201,7 +201,7 @@ export function FinancialOverview() {
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-[-0.02em] text-body">Financial overview</h1>
-          <p className="mt-1 max-w-prose text-sm text-muted">
+          <p className="mt-1 max-w-prose text-base text-muted">
             Budget position, the ledger by status, and fundraising — counted the same way the
             screens count them. Generated {formatDate(new Date().toISOString())}.
           </p>
@@ -228,18 +228,18 @@ export function FinancialOverview() {
 
       {pos && (
         <section className="sheet rounded-xl border border-line bg-surface p-5">
-          <h2 className="text-sm font-semibold text-body">
+          <h2 className="text-base font-semibold text-body">
             Budget position <span className="font-normal text-subtle">{pos.reference}</span>
           </h2>
           <div className="mt-3 overflow-x-auto">
-            <table className="w-full min-w-[42rem] border-collapse text-sm">
+            <table className="w-full min-w-[42rem] border-collapse text-base">
               <thead>
                 <tr className="border-b border-line text-left">
                   {['Line', 'Allocated', 'Committed', 'Spent', 'Available'].map((h) => (
                     <th
                       key={h}
                       scope="col"
-                      className="px-3 py-2 text-[0.6875rem] font-semibold tracking-[0.08em] text-subtle uppercase"
+                      className="px-3 py-2 text-xs font-semibold tracking-[0.08em] text-subtle uppercase"
                     >
                       {h}
                     </th>
@@ -250,10 +250,10 @@ export function FinancialOverview() {
                 {pos.lines.map((line) => (
                   <tr key={line.code} className="border-b border-line last:border-0">
                     <td className="px-3 py-2">
-                      <span className="font-mono text-xs text-subtle">{line.code}</span>
+                      <span className="font-mono text-sm text-subtle">{line.code}</span>
                       <span className="ml-2 text-body">{line.description}</span>
                       {!line.reconciled && (
-                        <span className="ml-2 text-xs font-medium text-danger-700">
+                        <span className="ml-2 text-sm font-medium text-danger-700">
                           does not agree with the ledger
                         </span>
                       )}
@@ -285,7 +285,7 @@ export function FinancialOverview() {
       )}
 
       <section className="sheet rounded-xl border border-line bg-surface p-5">
-        <h2 className="text-sm font-semibold text-body">Transactions by status</h2>
+        <h2 className="text-base font-semibold text-body">Transactions by status</h2>
         <dl className="mt-2">
           {Object.entries(byStatus).map(([status, bucket]) => (
             <Row
@@ -295,14 +295,14 @@ export function FinancialOverview() {
             />
           ))}
           {Object.keys(byStatus).length === 0 && (
-            <p className="py-2 text-sm text-muted">No transactions recorded.</p>
+            <p className="py-2 text-base text-muted">No transactions recorded.</p>
           )}
         </dl>
       </section>
 
       {mayReadDonations && (
         <section className="sheet rounded-xl border border-line bg-surface p-5">
-          <h2 className="text-sm font-semibold text-body">Fundraising</h2>
+          <h2 className="text-base font-semibold text-body">Fundraising</h2>
           <dl className="mt-2">
             {camps.map((campaign) => {
               const standing = describeCampaign({
@@ -331,7 +331,7 @@ export function FinancialOverview() {
         </section>
       )}
 
-      <p className="text-xs text-subtle">
+      <p className="text-sm text-subtle">
         {ORG.shortName} · figures as at {formatDate(new Date().toISOString())}. Amounts in
         rands. This overview is generated from the live records and is not an audited statement.
       </p>

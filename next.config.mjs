@@ -21,6 +21,45 @@ const nextConfig = {
   ],
 
   /*
+   * ONE `images.remotePatterns` ENTRY, AND IT IS NARROW ON PURPOSE.
+   *
+   * Event posters are uploaded to Cloudinary by staff and served from res.cloudinary.com, so
+   * next/image needs to be told the host is allowed. The path is pinned to the public-events
+   * folder: the same account also holds beneficiary permit scans and birth certificates, and
+   * those are private, authenticated assets that must never be reachable through the image
+   * optimiser. A bare `hostname: 'res.cloudinary.com'` would open the whole account.
+   *
+   * THE PRIVACY PROPERTY BELOW IS PRESERVED, NOT TRADED AWAY. Routed through next/image the
+   * visitor's browser requests /_next/image from this origin and the server fetches from
+   * Cloudinary — so nobody reading a page about asylum permits hands their IP address to a
+   * third party. That is exactly why the poster must go through next/image and never a bare
+   * <img src="https://res.cloudinary.com/…">.
+   */
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**/nwhr/public-events/**',
+      },
+    ],
+  },
+
+  /*
+   * The reasoning that kept this empty until event posters arrived, still worth reading.
+   *
+   * There was an allowance here for images.unsplash.com while the hero carried stock
+   * photographs; the hero no longer has any, so it came out with them.
+   *
+   * Worth knowing if one is added back: it is a privacy control as much as a performance one.
+   * A plain <img src="https://images.unsplash.com/…"> makes every visitor's browser connect
+   * to that host directly, handing a third party the IP address of somebody reading a page
+   * about asylum permits. Routed through next/image the browser only requests /_next/image
+   * from this origin and the server does the fetching. NWHR's own photographs belong in
+   * /public or in Cloudinary, which is already configured, and need no entry here at all.
+   */
+
+  /*
    * Security headers, replacing helmet.
    *
    * helmet was Express middleware and does not come across. These are the subset that

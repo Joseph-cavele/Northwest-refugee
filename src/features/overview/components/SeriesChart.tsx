@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatValue } from '@/lib/format';
 import { formatDate } from '@/lib/dates';
@@ -39,7 +40,27 @@ export interface SeriesChartProps {
   className?: string;
   /** Rendered in place of the plot when there is nothing stored yet. */
   empty?: React.ReactNode;
+  /**
+   * One instant for the whole screen, fixed when it opens, used to work out how old the
+   * newest reading is.
+   *
+   * PASSED IN RATHER THAN READ HERE, for the reason the register's list records: reading the
+   * clock during render makes the component impure — the same series would produce different
+   * output on a re-render React had every right to discard — and two charts on one screen
+   * would be timed against two different instants. Omitted, the freshness line is simply not
+   * drawn, which is the safe default for a caller that has not thought about it.
+   */
+  now?: number;
 }
+
+/*
+ * How old a series may be before the chart says so.
+ *
+ * Two days, because the snapshot runs nightly: yesterday's last reading is normal, and
+ * anything older means the job has not run or the records stopped moving. Below this
+ * threshold a freshness line would be noise on every chart every day.
+ */
+const STALE_AFTER_DAYS = 2;
 
 const COLOURS = ['var(--color-brand-500)', 'var(--color-accent-500)'];
 
@@ -60,8 +81,13 @@ export function SeriesChart({
   height = 240,
   className,
   empty,
+  now,
 }: SeriesChartProps) {
   const [hover, setHover] = useState<number | null>(null);
+
+  // Two of these charts can be on screen at once, and a gradient id collision would make
+  // the second one paint with the first one's fill.
+  const areaId = useId();
 
   const length = Math.max(...series.map((s) => s.points.length), 0);
   const plot = { w: VIEW_W - PAD.left - PAD.right, h: height - PAD.top - PAD.bottom };
@@ -80,13 +106,25 @@ export function SeriesChart({
   if (length === 0) {
     return (
       <div className={cn('grid min-h-52 place-items-center px-6 text-center', className)}>
-        {empty ?? <p className="text-sm text-muted">Nothing stored yet.</p>}
+        {empty ?? <p className="text-base text-muted">Nothing stored yet.</p>}
       </div>
     );
   }
 
   const dates = series[0]?.points ?? [];
   const slot = plot.w / Math.max(length, 1);
+
+  /*
+   * How far behind today the newest reading is, or null when it is current enough to say
+   * nothing — and also null when the caller passed no instant, because a chart must not
+   * invent a clock of its own.
+   */
+  const newest = dates[dates.length - 1];
+  const staleDays = (() => {
+    if (now === undefined || !newest) return null;
+    const days = Math.floor((now - new Date(newest.date).getTime()) / 86_400_000);
+    return days > STALE_AFTER_DAYS ? days : null;
+  })();
 
   /*
    * Bars fill most of their slot, with a small gap between the group and its neighbours.
@@ -103,20 +141,40 @@ export function SeriesChart({
 
   return (
     <div className={cn('w-full', className)}>
-      {/* A legend is always present for two or more series — identity must never be
-          carried by colour alone. */}
-      {series.length > 1 && (
-        <ul className="mb-1 flex flex-wrap gap-4 px-1">
-          {series.map((s, i) => (
-            <li key={s.key} className="flex items-center gap-2 text-xs text-muted">
-              <span
-                aria-hidden="true"
-                className="size-2.5 rounded-full"
-                style={{ background: COLOURS[i % COLOURS.length] }}
-              />
-              {s.label}
-            </li>
-          ))}
+      {/*
+        * The legend, and the latest figure beside each label.
+        *
+        * IT IS NOW DRAWN FOR A SINGLE SERIES TOO, because it carries a number rather than
+        * only a colour key. The value used to be reachable only by hovering a 2px line —
+        * which is no way to read a chart at all on a phone, where there is no hover and
+        * never will be. The most recent reading is the thing a reader wants most often, so
+        * it is on the page rather than behind a gesture half this audience cannot make.
+        *
+        * Identity is still never carried by colour alone: the swatch is beside its label.
+        */}
+      {series.some((s) => s.points.length > 0) && (
+        <ul className="mb-1 flex flex-wrap gap-x-5 gap-y-1 px-1">
+          {series.map((s, i) => {
+            const latest = s.points[s.points.length - 1];
+            return (
+              <li key={s.key} className="flex items-baseline gap-2 text-sm text-muted">
+                <span
+                  aria-hidden="true"
+                  className="size-2.5 shrink-0 translate-y-px rounded-full"
+                  style={{ background: COLOURS[i % COLOURS.length] }}
+                />
+                {s.label}
+                {latest && (
+                  <span
+                    className="font-semibold text-body"
+                    style={{ fontVariantNumeric: 'tabular-nums' }}
+                  >
+                    {formatValue(latest.value, unit)}
+                  </span>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
 
@@ -129,6 +187,21 @@ export function SeriesChart({
           aria-label={`${series.map((s) => s.label).join(' and ')} over ${length} days. Highest value ${formatValue(max, unit)}.`}
           onMouseLeave={() => setHover(null)}
         >
+          {variant === 'line' && (
+            <defs>
+              {series.map((s, si) => (
+                <linearGradient key={s.key} id={`${areaId}-${si}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop
+                    offset="0%"
+                    stopColor={COLOURS[si % COLOURS.length]}
+                    stopOpacity="0.14"
+                  />
+                  <stop offset="100%" stopColor={COLOURS[si % COLOURS.length]} stopOpacity="0" />
+                </linearGradient>
+              ))}
+            </defs>
+          )}
+
           {/* Recessive grid: it orients the eye and must not compete with the data. */}
           {ticks.map((t) => (
             <g key={t.y}>
@@ -164,17 +237,44 @@ export function SeriesChart({
                   />
                 ))
               )
-            : series.map((s, si) => (
-                <path
-                  key={s.key}
-                  d={s.points.map((p, i) => `${i === 0 ? 'M' : 'L'}${xOf(i)},${yOf(p.value)}`).join(' ')}
-                  fill="none"
-                  stroke={COLOURS[si % COLOURS.length]}
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              ))}
+            : series.map((s, si) => {
+                // A series the caller could not fill draws nothing. Closing an area path
+                // over an empty point list would reach for xOf(-1) and paint a wedge.
+                if (s.points.length === 0) return null;
+
+                const line = s.points
+                  .map((p, i) => `${i === 0 ? 'M' : 'L'}${xOf(i)},${yOf(p.value)}`)
+                  .join(' ');
+                const colour = COLOURS[si % COLOURS.length]!;
+                const baseline = PAD.top + plot.h;
+
+                return (
+                  <g key={s.key}>
+                    {/*
+                      * A wash under the line, closed down to the baseline.
+                      *
+                      * IT ENCODES NOTHING THE LINE DOES NOT — it is there because two 2px
+                      * strokes crossing on a white field give the eye no way to tell which
+                      * is in front, and a filled area settles that instantly. It tops out at
+                      * 14% and fades to nothing, so it never competes with the stroke and
+                      * never reads as a stacked band, which WOULD be a claim: these two
+                      * series are independent levels and must not look additive.
+                      */}
+                    <path
+                      d={`${line} L${xOf(s.points.length - 1)},${baseline} L${xOf(0)},${baseline} Z`}
+                      fill={`url(#${areaId}-${si})`}
+                    />
+                    <path
+                      d={line}
+                      fill="none"
+                      stroke={colour}
+                      strokeWidth="2.25"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </g>
+                );
+              })}
 
           {hover !== null && (
             <line
@@ -227,10 +327,34 @@ export function SeriesChart({
           </text>
         </svg>
 
+        {staleDays !== null && (
+          /*
+           * WHY THIS EXISTS. A series whose last reading is a fortnight old draws a line that
+           * stops two thirds of the way across and then nothing. There is no visual
+           * difference between "the recording stopped" and "the work fell off a cliff", and a
+           * reader has no reason to prefer the first reading. Saying it in words is the only
+           * fix — the same argument as the empty state that used to claim "no history yet"
+           * while the request behind it was failing.
+           *
+           * `role="status"` rather than "alert": it is a fact about the chart worth noticing,
+           * not something to interrupt a screen reader mid-sentence.
+           */
+          <p
+            role="status"
+            className="mt-1 flex flex-wrap items-center gap-x-1.5 px-1 text-sm text-accent-800"
+          >
+            <AlertTriangle className="size-3.5 shrink-0" aria-hidden="true" />
+            <span className="font-semibold">
+              Last reading {staleDays} days ago, on {formatDate(dates[dates.length - 1]!.date)}.
+            </span>
+            <span className="text-muted">The line stops there — it is not a fall to zero.</span>
+          </p>
+        )}
+
         {hover !== null && dates[hover] && (
           <div
             role="status"
-            className="pointer-events-none absolute top-1 right-1 rounded-lg border border-line bg-surface px-3 py-2 text-xs shadow-sm"
+            className="pointer-events-none absolute top-1 right-1 rounded-lg border border-line bg-surface px-3 py-2 text-sm shadow-sm"
           >
             <p className="mb-1 text-subtle">{formatDate(dates[hover]!.date)}</p>
             {series.map((s, si) => (

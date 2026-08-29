@@ -229,8 +229,8 @@ export function Sidebar({ onNavigate, collapsed = false, className }: SidebarPro
           <Logo size={34} decorative />
           {!collapsed && (
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-white">{ORG.shortName}</p>
-              <p className="truncate text-xs text-white/55">{ORG.city}</p>
+              <p className="truncate text-base font-semibold text-white">{ORG.shortName}</p>
+              <p className="truncate text-sm text-white/55">{ORG.city}</p>
             </div>
           )}
         </div>
@@ -243,7 +243,7 @@ export function Sidebar({ onNavigate, collapsed = false, className }: SidebarPro
             {/* Headings are structure, not decoration: they name how the work divides up.
                 In the rail they would be four letters of nothing, so they go. */}
             {!collapsed && (
-              <p className="px-3 pt-3 pb-1.5 text-[0.625rem] font-semibold tracking-[0.12em] text-white/40 uppercase">
+              <p className="px-3 pt-3 pb-1.5 text-xs font-semibold tracking-[0.12em] text-white/40 uppercase">
                 {section.heading}
               </p>
             )}
@@ -265,7 +265,7 @@ export function Sidebar({ onNavigate, collapsed = false, className }: SidebarPro
                       title={collapsed ? item.label : undefined}
                       aria-label={collapsed ? item.label : undefined}
                       className={cn(
-                        'flex items-center rounded-lg text-sm transition-colors',
+                        'flex items-center rounded-lg text-base transition-colors',
                         collapsed ? 'justify-center px-0 py-2.5' : 'gap-3 px-3 py-2',
                         isActive
                           // White on brand-500 is 7.3:1. Of the logo's four colours it is
@@ -298,7 +298,7 @@ export function Sidebar({ onNavigate, collapsed = false, className }: SidebarPro
                      * than disabled controls, so they do not get that exemption.
                      */
                     className={cn(
-                      'flex items-center rounded-lg text-sm text-white/50',
+                      'flex items-center rounded-lg text-base text-white/50',
                       collapsed ? 'justify-center px-0 py-2.5' : 'gap-3 px-3 py-2'
                     )}
                   >
@@ -307,7 +307,7 @@ export function Sidebar({ onNavigate, collapsed = false, className }: SidebarPro
                       <>
                         <span className="truncate">{item.label}</span>
                         {/* The state in a word. Dimmed text alone reads as a bug. */}
-                        <span className="ml-auto shrink-0 rounded-full bg-white/10 px-1.5 py-0.5 text-[0.625rem] font-semibold tracking-wide text-white/65 uppercase">
+                        <span className="ml-auto shrink-0 rounded-full bg-white/10 px-1.5 py-0.5 text-xs font-semibold tracking-wide text-white/65 uppercase">
                           Soon
                         </span>
                       </>
@@ -322,7 +322,7 @@ export function Sidebar({ onNavigate, collapsed = false, className }: SidebarPro
       </div>
 
       {!collapsed && (
-        <p className="border-t border-white/10 px-5 py-4 text-xs leading-relaxed text-white/45">
+        <p className="border-t border-white/10 px-5 py-4 text-sm leading-relaxed text-white/45">
           {ORG.tagline}
         </p>
       )}

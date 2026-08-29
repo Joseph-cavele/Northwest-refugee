@@ -116,7 +116,7 @@ const consentFields = z.object({
   // Refused at the edge: a record must never be created for someone who declined. The
   // WhatsApp bot discards the session rather than reaching this endpoint at all.
   given: z.literal(true, { error: 'Consent must be given before a record can be created' }),
-  method: z.enum(['WHATSAPP', 'SIGNED_FORM', 'VERBAL_WITNESSED'], {
+  method: z.enum(['WHATSAPP', 'SIGNED_FORM', 'VERBAL_WITNESSED', 'ONLINE_FORM'], {
     error: 'Record how consent was obtained',
   }),
   // Which wording was agreed to. Without it, a later change to the text makes every
@@ -329,3 +329,64 @@ export const exitBeneficiarySchema = z.object({
 export const withdrawConsentSchema = z.object({
   reason: z.string().trim().max(500).optional(),
 });
+
+// --- public intake ---------------------------------------------------------------
+/*
+ * What /get-help is allowed to send. A DELIBERATELY NARROWER SHAPE than
+ * createBeneficiarySchema, and every omission is a decision rather than an oversight.
+ *
+ * NOT ACCEPTED FROM THE PUBLIC, AT ALL:
+ *
+ *   permitNumber        Encrypted at rest with a blind index, `select: false`, never logged.
+ *                       A digit mistyped on a phone becomes an undecryptable lookup key that
+ *                       nobody can correct without the document in hand. It is taken at the
+ *                       desk, from the permit itself.
+ *   vulnerabilityFlags  Reading these inside the dashboard needs `beneficiary:read_sensitive`
+ *                       and writes an audit entry. Accepting them on an unauthenticated route
+ *                       would let anyone write the most protected category in the system into
+ *                       somebody else's record.
+ *   programmes,         Assignment is a staff decision. A caller who could set them could
+ *   assignedOfficer     enrol a stranger onto a programme or attach them to an officer.
+ *   status              Every public intake lands as PENDING_VERIFICATION. Nothing self-
+ *                       registered is verified by the act of registering.
+ *
+ * FORCED SERVER-SIDE, NEVER READ FROM THE BODY: `intakeChannel` is WEB and `consent.method` is
+ * ONLINE_FORM, because both describe how the request actually arrived and the sender is not a
+ * trustworthy narrator of that. `arrivingBy` below records what the person SAYS they will do —
+ * walk in, or come on a referral — which is a different fact and belongs in the notes a
+ * caseworker reads, not in the channel field an auditor relies on.
+ */
+export const publicIntakeSchema = beneficiaryFields
+  .omit({
+    vulnerabilityFlags: true,
+    programmes: true,
+    assignedOfficer: true,
+    consent: true,
+    intakeChannel: true,
+  })
+  .extend({
+    immigration: immigrationFields.omit({ permitNumber: true }),
+    contact: contactFields.extend({
+      address: addressLine.default(''),
+      suburb: shortText.default(''),
+      city: shortText.default(''),
+      province: shortText.default(''),
+    }),
+    household: householdFields.optional(),
+    notes: z.string().trim().max(2000).default(''),
+
+    /** How the person says they are coming to us. Recorded in the notes, not the channel. */
+    arrivingBy: z.enum(['WALK_IN', 'REFERRAL', 'WEB', 'WHATSAPP']).default('WEB'),
+    referredBy: z.string().trim().max(120).default(''),
+
+    /*
+     * Consent, reduced to the one thing a visitor can actually assert. `given` must be the
+     * literal true — the schema refuses the record outright rather than storing a decline,
+     * which is the same rule the WhatsApp bot follows by discarding the session.
+     */
+    consent: z.object({
+      given: z.literal(true, { error: 'Consent must be given before a record can be created' }),
+      policyVersion: z.string().trim().min(1).max(20).optional(),
+    }),
+  })
+  .superRefine(checkCrossFieldRules);

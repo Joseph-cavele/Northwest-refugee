@@ -70,7 +70,7 @@ function Section({
 }) {
   return (
     <section className={cn('rounded-xl border border-line bg-surface p-5', className)}>
-      <h2 className="flex items-center gap-2 text-sm font-semibold text-body">
+      <h2 className="flex items-center gap-2 text-base font-semibold text-body">
         <Icon className="size-4 text-subtle" aria-hidden="true" />
         {title}
       </h2>
@@ -82,8 +82,8 @@ function Section({
 function Fact({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5 border-t border-line py-2.5 first:border-t-0 first:pt-0 sm:flex-row sm:gap-4 sm:py-2">
-      <dt className="shrink-0 text-xs text-subtle sm:w-40 sm:pt-0.5">{label}</dt>
-      <dd className="min-w-0 flex-1 text-sm text-body">{children}</dd>
+      <dt className="shrink-0 text-sm text-subtle sm:w-40 sm:pt-0.5">{label}</dt>
+      <dd className="min-w-0 flex-1 text-base text-body">{children}</dd>
     </div>
   );
 }
@@ -144,13 +144,13 @@ export function BeneficiaryRecord({ id }: { id: Id }) {
             </h1>
             <StatusPill status={person.status} />
             {person.isMinor && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-danger-50 px-2.5 py-1 text-[0.6875rem] font-bold tracking-wide text-danger-700 uppercase">
+              <span className="inline-flex items-center gap-1 rounded-full bg-danger-50 px-2.5 py-1 text-xs font-bold tracking-wide text-danger-700 uppercase">
                 <ShieldAlert className="size-3.5" aria-hidden="true" />
                 Minor
               </span>
             )}
           </div>
-          <p className="mt-1 font-mono text-sm text-subtle">{person.referenceCode}</p>
+          <p className="mt-1 font-mono text-base text-subtle">{person.referenceCode}</p>
         </div>
 
         {can(PERMISSIONS.BENEFICIARY_VERIFY) && (
@@ -239,7 +239,7 @@ export function BeneficiaryRecord({ id }: { id: Id }) {
                     * an appointment. Listing all four as equals would lose that.
                     */}
                   <span className="font-medium">{LANGUAGE_LABELS[preferred]}</span>
-                  <span className="text-xs text-subtle">preferred</span>
+                  <span className="text-sm text-subtle">preferred</span>
                   {otherLanguages.length > 0 && (
                     <span className="text-muted">
                       · also {otherLanguages.map((l) => LANGUAGE_LABELS[l]).join(', ')}
@@ -309,7 +309,7 @@ export function BeneficiaryRecord({ id }: { id: Id }) {
 
           {person.notes && (
             <Section title="Notes" icon={UserRound}>
-              <p className="text-sm whitespace-pre-wrap text-body">{person.notes}</p>
+              <p className="text-base whitespace-pre-wrap text-body">{person.notes}</p>
             </Section>
           )}
         </div>
@@ -373,7 +373,7 @@ function BackLink() {
   return (
     <Link
       href="/dashboard/beneficiaries"
-      className="inline-flex w-fit items-center gap-1.5 text-sm text-muted underline-offset-2 hover:text-brand-600 hover:underline"
+      className="inline-flex w-fit items-center gap-1.5 text-base text-muted underline-offset-2 hover:text-brand-600 hover:underline"
     >
       <ArrowLeft className="size-4" aria-hidden="true" />
       Back to the register

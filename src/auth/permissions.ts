@@ -68,6 +68,9 @@ export const PERMISSIONS = {
   EVENT_CREATE: 'event:create',
   EVENT_READ: 'event:read',
   EVENT_UPDATE: 'event:update',
+  /** Separate from event:update on purpose — see the note in server/config/permissions.js. */
+  EVENT_PUBLISH: 'event:publish',
+  EVENT_DELETE: 'event:delete',
   EDUCATION_CREATE: 'education:create',
   EDUCATION_READ: 'education:read',
   EDUCATION_UPDATE: 'education:update',
@@ -121,6 +124,9 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
     P.DEPARTMENT_UPDATE,
     P.BENEFICIARY_READ,
     P.BENEFICIARY_READ_SENSITIVE,
+    // Mirrors the server. Same reasoning as USER_INVITE: intake must not stall when there
+    // is no Admin Officer in post. The finance omissions below are untouched.
+    P.BENEFICIARY_VERIFY,
     P.CASE_READ,
     P.DOCUMENT_READ,
     P.DOCUMENT_DOWNLOAD,
@@ -129,6 +135,10 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
     P.PROGRAMME_READ,
     P.ENROLLMENT_READ,
     P.EVENT_READ,
+    P.EVENT_CREATE,
+    P.EVENT_UPDATE,
+    P.EVENT_PUBLISH,
+    P.EVENT_DELETE,
     P.EDUCATION_READ,
     P.BUDGET_READ,
     P.BUDGET_APPROVE,
@@ -258,6 +268,7 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
     P.EVENT_CREATE,
     P.EVENT_READ,
     P.EVENT_UPDATE,
+    P.EVENT_PUBLISH,
     P.CHATBOARD_READ,
     P.CHATBOARD_POST,
     P.CHATBOARD_MANAGE,

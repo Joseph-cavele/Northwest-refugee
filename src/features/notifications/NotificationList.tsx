@@ -100,7 +100,7 @@ export function NotificationList() {
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-[-0.02em] text-body">Notifications</h1>
-          <p className="mt-1 text-sm text-muted">
+          <p className="mt-1 text-base text-muted">
             {meta
               ? `${formatCount(meta.total)} ${meta.total === 1 ? 'notification' : 'notifications'} addressed to you`
               : 'Everything addressed to you.'}
@@ -126,7 +126,7 @@ export function NotificationList() {
           aria-pressed={unreadOnly}
           onClick={() => refilter(() => setUnreadOnly((v) => !v))}
           className={cn(
-            'min-h-10 rounded-full border px-4 text-sm font-medium transition-colors',
+            'min-h-10 rounded-full border px-4 text-base font-medium transition-colors',
             unreadOnly
               ? 'border-brand-500 bg-brand-500 text-white'
               : 'border-line bg-surface text-body hover:border-line-strong'
@@ -135,12 +135,12 @@ export function NotificationList() {
           Unread only
         </button>
 
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-base">
           <span className="sr-only">Filter by type</span>
           <select
             value={type}
             onChange={(event) => refilter(() => setType(event.target.value as NotificationType | ''))}
-            className="min-h-10 rounded-full border border-line bg-surface px-4 text-sm text-body hover:border-line-strong"
+            className="min-h-10 rounded-full border border-line bg-surface px-4 text-base text-body hover:border-line-strong"
           >
             <option value="">Every kind</option>
             {NOTIFICATION_TYPES.map((value) => (
@@ -168,10 +168,10 @@ export function NotificationList() {
       {data && rows.length === 0 && (
         <div className="rounded-xl border border-line bg-surface px-6 py-12 text-center">
           <BellOff className="mx-auto size-5 text-subtle" aria-hidden="true" />
-          <p className="mt-2 text-sm text-body">
+          <p className="mt-2 text-base text-body">
             {unreadOnly ? 'Nothing unread.' : type ? 'Nothing of that kind.' : 'Nothing yet.'}
           </p>
-          <p className="mx-auto mt-1 max-w-sm text-xs text-muted">
+          <p className="mx-auto mt-1 max-w-sm text-sm text-muted">
             Notifications are raised by the nightly rollup and by work that needs a decision.
           </p>
         </div>

@@ -47,10 +47,10 @@ export interface SensitivePanelProps {
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1 border-t border-line py-3 first:border-t-0 first:pt-0 sm:flex-row sm:gap-4">
-      <dt className="shrink-0 text-xs font-semibold tracking-wide text-subtle uppercase sm:w-44 sm:pt-0.5">
+      <dt className="shrink-0 text-sm font-semibold tracking-wide text-subtle uppercase sm:w-44 sm:pt-0.5">
         {label}
       </dt>
-      <dd className="min-w-0 flex-1 text-sm text-body">{children}</dd>
+      <dd className="min-w-0 flex-1 text-base text-body">{children}</dd>
     </div>
   );
 }
@@ -75,11 +75,11 @@ export function SensitivePanel({ beneficiaryId, referenceCode }: SensitivePanelP
   if (!can(PERMISSIONS.BENEFICIARY_READ_SENSITIVE)) {
     return (
       <section className="rounded-xl border border-line bg-sunken p-5">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-body">
+        <h2 className="flex items-center gap-2 text-base font-semibold text-body">
           <Lock className="size-4 text-subtle" aria-hidden="true" />
           Protected information
         </h2>
-        <p className="mt-2 max-w-prose text-sm text-muted">
+        <p className="mt-2 max-w-prose text-base text-muted">
           Permit number, vulnerability flags and email address are held separately on every
           record and need a role that includes reading them. Ask an administrator if your work
           requires it.
@@ -90,14 +90,14 @@ export function SensitivePanel({ beneficiaryId, referenceCode }: SensitivePanelP
 
   return (
     <section className="rounded-xl border border-accent-200 bg-accent-50/40 p-5">
-      <h2 className="flex items-center gap-2 text-sm font-semibold text-body">
+      <h2 className="flex items-center gap-2 text-base font-semibold text-body">
         <ShieldAlert className="size-4 text-accent-700" aria-hidden="true" />
         Protected information
       </h2>
 
       {!shown ? (
         <>
-          <p className="mt-2 max-w-prose text-sm text-muted">
+          <p className="mt-2 max-w-prose text-base text-muted">
             Permit number, vulnerability flags and email address. Opening these is recorded
             against your name, with the reason you give below.
           </p>
@@ -110,7 +110,7 @@ export function SensitivePanel({ beneficiaryId, referenceCode }: SensitivePanelP
 
           <div className="mt-4 flex flex-col gap-3 sm:max-w-md">
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-semibold tracking-wide text-subtle uppercase">
+              <span className="text-sm font-semibold tracking-wide text-subtle uppercase">
                 Reason for opening
               </span>
               <input
@@ -127,7 +127,7 @@ export function SensitivePanel({ beneficiaryId, referenceCode }: SensitivePanelP
                 maxLength={200}
                 placeholder="e.g. Renewing this permit at Home Affairs"
                 disabled={busy}
-                className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-body placeholder:text-subtle hover:border-line-strong focus:border-brand-400"
+                className="rounded-lg border border-line bg-surface px-3 py-2 text-base text-body placeholder:text-subtle hover:border-line-strong focus:border-brand-400"
               />
             </label>
 
@@ -149,14 +149,14 @@ export function SensitivePanel({ beneficiaryId, referenceCode }: SensitivePanelP
               * Stated as a completed fact, in the past tense, because it is one: the entry
               * is already written. "This will be recorded" would be a lie by tense.
               */}
-            <p className="text-xs text-muted">
+            <p className="text-sm text-muted">
               Recorded at {formatTime(shown.at)} against {shown.data.referenceCode || referenceCode}
               {shown.reason ? ` — “${shown.reason}”` : ' — no reason given'}
             </p>
             <button
               type="button"
               onClick={() => setShown(null)}
-              className="inline-flex min-h-9 shrink-0 items-center gap-1.5 text-xs font-semibold text-brand-600 underline-offset-2 hover:underline"
+              className="inline-flex min-h-9 shrink-0 items-center gap-1.5 text-sm font-semibold text-brand-600 underline-offset-2 hover:underline"
             >
               <EyeOff className="size-3.5" aria-hidden="true" />
               Hide
@@ -196,7 +196,7 @@ export function SensitivePanel({ beneficiaryId, referenceCode }: SensitivePanelP
                   {shown.data.vulnerabilityFlags.map((flag) => (
                     <li
                       key={flag}
-                      className="rounded-full bg-danger-50 px-2.5 py-1 text-xs font-medium text-danger-700"
+                      className="rounded-full bg-danger-50 px-2.5 py-1 text-sm font-medium text-danger-700"
                     >
                       {VULNERABILITY_FLAG_LABELS[flag]}
                     </li>
@@ -222,7 +222,7 @@ export function SensitivePanel({ beneficiaryId, referenceCode }: SensitivePanelP
             </Row>
           </dl>
 
-          <p className="mt-3 flex items-start gap-1.5 text-xs text-subtle">
+          <p className="mt-3 flex items-start gap-1.5 text-sm text-subtle">
             <KeyRound className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
             Do not copy these into a case note, an email or a report. They stay here.
           </p>

@@ -117,7 +117,7 @@ function Person({ row }: { row: ServiceRequestRow }) {
       >
         {person.firstName} {person.lastName}
       </Link>
-      <span className="block truncate font-mono text-xs text-subtle">{person.referenceCode}</span>
+      <span className="block truncate font-mono text-sm text-subtle">{person.referenceCode}</span>
     </div>
   );
 }
@@ -167,7 +167,7 @@ export function ServiceRequestList() {
     <div className="flex flex-col gap-5">
       <header>
         <h1 className="text-2xl font-semibold tracking-[-0.02em] text-body">Service requests</h1>
-        <p className="mt-1 text-sm text-muted">
+        <p className="mt-1 text-base text-muted">
           {meta
             ? `${formatCount(meta.total)} ${meta.total === 1 ? 'request' : 'requests'} you can see`
             : 'One thing each person asked for, and when it was promised.'}
@@ -180,7 +180,7 @@ export function ServiceRequestList() {
           aria-pressed={mine}
           onClick={() => refilter(() => setMine((v) => !v))}
           className={cn(
-            'inline-flex min-h-10 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors',
+            'inline-flex min-h-10 items-center gap-2 rounded-full border px-4 text-base font-medium transition-colors',
             mine
               ? 'border-brand-500 bg-brand-500 text-white'
               : 'border-line bg-surface text-body hover:border-line-strong'
@@ -195,7 +195,7 @@ export function ServiceRequestList() {
           aria-pressed={overdue}
           onClick={() => refilter(() => setOverdue((v) => !v))}
           className={cn(
-            'inline-flex min-h-10 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors',
+            'inline-flex min-h-10 items-center gap-2 rounded-full border px-4 text-base font-medium transition-colors',
             overdue
               ? 'border-danger-500 bg-danger-500 text-white'
               : 'border-line bg-surface text-body hover:border-line-strong'
@@ -205,7 +205,7 @@ export function ServiceRequestList() {
           Overdue only
         </button>
 
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-base">
           <span className="sr-only">Filter by status</span>
           <select
             value={status}
@@ -215,7 +215,7 @@ export function ServiceRequestList() {
             // Overdue is open work by definition; offering a terminal status alongside it
             // would guarantee an empty list and look like a broken filter.
             disabled={overdue}
-            className="min-h-10 rounded-full border border-line bg-surface px-4 text-sm text-body hover:border-line-strong disabled:text-ink-400"
+            className="min-h-10 rounded-full border border-line bg-surface px-4 text-base text-body hover:border-line-strong disabled:text-ink-400"
           >
             <option value="">Every status</option>
             {SERVICE_REQUEST_STATUSES.map((value) => (
@@ -226,14 +226,14 @@ export function ServiceRequestList() {
           </select>
         </label>
 
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-base">
           <span className="sr-only">Filter by category</span>
           <select
             value={category}
             onChange={(event) =>
               refilter(() => setCategory(event.target.value as ServiceCategory | ''))
             }
-            className="min-h-10 rounded-full border border-line bg-surface px-4 text-sm text-body hover:border-line-strong"
+            className="min-h-10 rounded-full border border-line bg-surface px-4 text-base text-body hover:border-line-strong"
           >
             <option value="">Every category</option>
             {SERVICE_CATEGORIES.map((value) => (
@@ -258,7 +258,7 @@ export function ServiceRequestList() {
 
       {data && rows.length === 0 && (
         <div className="rounded-xl border border-line bg-surface px-6 py-12 text-center">
-          <p className="text-sm text-body">
+          <p className="text-base text-body">
             {overdue && !narrowedBeyondOverdue
               ? // The good outcome. Rendering it as "no results" makes the best state on
                 // this screen look like a failure.
@@ -267,7 +267,7 @@ export function ServiceRequestList() {
                 ? 'No requests match those filters.'
                 : 'No service requests have been raised yet.'}
           </p>
-          <p className="mx-auto mt-1 max-w-sm text-xs text-muted">
+          <p className="mx-auto mt-1 max-w-sm text-sm text-muted">
             Requests arrive from the front desk or the WhatsApp bot, and are due within the
             time their urgency promises.
           </p>
@@ -284,15 +284,15 @@ export function ServiceRequestList() {
                   <Person row={row} />
                   <span
                     className={cn(
-                      'shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap',
+                      'shrink-0 rounded-full px-2.5 py-1 text-sm font-semibold whitespace-nowrap',
                       STATUS_TONE[row.status]
                     )}
                   >
                     {SERVICE_REQUEST_STATUS_LABELS[row.status]}
                   </span>
                 </div>
-                <p className="font-mono text-xs text-subtle">{row.reference}</p>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                <p className="font-mono text-sm text-subtle">{row.reference}</p>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                   <span className="text-muted">{SERVICE_CATEGORY_LABELS[row.category]}</span>
                   <span aria-hidden="true" className="text-subtle">
                     ·
@@ -307,7 +307,7 @@ export function ServiceRequestList() {
                   <button
                     type="button"
                     onClick={() => setEditing(row)}
-                    className="min-h-9 self-start text-xs font-semibold text-brand-600 underline-offset-2 hover:underline"
+                    className="min-h-9 self-start text-sm font-semibold text-brand-600 underline-offset-2 hover:underline"
                   >
                     Update status
                     <span className="sr-only"> for {row.reference}</span>
@@ -319,7 +319,7 @@ export function ServiceRequestList() {
 
           {/* --- from md up: the table, scrolling inside itself --- */}
           <div className="hidden overflow-x-auto md:block">
-            <table className="w-full min-w-[68rem] border-collapse text-sm">
+            <table className="w-full min-w-[68rem] border-collapse text-base">
               <caption className="sr-only">The service-request queue</caption>
               <thead>
                 <tr className="border-b border-line text-left">
@@ -327,7 +327,7 @@ export function ServiceRequestList() {
                     <th
                       key={heading}
                       scope="col"
-                      className="px-4 py-3 text-[0.6875rem] font-semibold tracking-[0.08em] text-subtle uppercase"
+                      className="px-4 py-3 text-xs font-semibold tracking-[0.08em] text-subtle uppercase"
                     >
                       {heading}
                     </th>
@@ -345,9 +345,9 @@ export function ServiceRequestList() {
                   return (
                     <tr key={row._id} className="border-b border-line last:border-0 hover:bg-ink-25">
                       <td className="px-4 py-3">
-                        <span className="block font-mono text-xs text-body">{row.reference}</span>
+                        <span className="block font-mono text-sm text-body">{row.reference}</span>
                         {row.description && (
-                          <span className="mt-0.5 block max-w-[20rem] truncate text-xs text-subtle">
+                          <span className="mt-0.5 block max-w-[20rem] truncate text-sm text-subtle">
                             {row.description}
                           </span>
                         )}
@@ -367,7 +367,7 @@ export function ServiceRequestList() {
                       <td className="px-4 py-3">
                         <span
                           className={cn(
-                            'inline-block rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap',
+                            'inline-block rounded-full px-2.5 py-1 text-sm font-semibold whitespace-nowrap',
                             STATUS_TONE[row.status]
                           )}
                         >
@@ -385,7 +385,7 @@ export function ServiceRequestList() {
                             <button
                               type="button"
                               onClick={() => setEditing(row)}
-                              className="rounded-full border border-line px-3 py-1.5 text-xs font-semibold text-body hover:border-line-strong hover:bg-ink-50"
+                              className="rounded-full border border-line px-3 py-1.5 text-sm font-semibold text-body hover:border-line-strong hover:bg-ink-50"
                             >
                               Update
                               <span className="sr-only"> {row.reference}</span>

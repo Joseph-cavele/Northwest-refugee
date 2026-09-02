@@ -2,9 +2,11 @@
 
 import { useCallback, useState } from 'react';
 import Link from 'next/link';
-import { Archive, CalendarRange, Search, Users } from 'lucide-react';
+import { Archive, CalendarRange, Plus, Search, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useApi } from '@/hooks/useApi';
+import { useAuth } from '@/auth/useAuth';
+import { PERMISSIONS } from '@/auth/permissions';
 import { useDebounce } from '@/hooks/useDebounce';
 import { ErrorAlert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -119,6 +121,7 @@ function Card({ programme }: { programme: Programme }) {
 }
 
 export function ProgrammeList() {
+  const { can } = useAuth();
   const [term, setTerm] = useState('');
   const [pillar, setPillar] = useState<ProgrammePillar | ''>('');
   const [status, setStatus] = useState<ProgrammeStatus | ''>('');
@@ -155,13 +158,25 @@ export function ProgrammeList() {
 
   return (
     <div className="flex flex-col gap-5">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-[-0.02em] text-body">Programmes</h1>
-        <p className="mt-1 text-base text-muted">
-          {meta
-            ? `${meta.total} ${meta.total === 1 ? 'programme' : 'programmes'} across ${grouped.length} ${grouped.length === 1 ? 'pillar' : 'pillars'}`
-            : 'What this organisation runs, by pillar.'}
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-[-0.02em] text-body">Programmes</h1>
+          <p className="mt-1 text-base text-muted">
+            {meta
+              ? `${meta.total} ${meta.total === 1 ? 'programme' : 'programmes'} across ${grouped.length} ${grouped.length === 1 ? 'pillar' : 'pillars'}`
+              : 'What this organisation runs, by pillar.'}
+          </p>
+        </div>
+
+        {can(PERMISSIONS.PROGRAMME_CREATE) && (
+          <Link
+            href="/dashboard/programmes/new"
+            className="inline-flex min-h-10 items-center gap-2 rounded-full bg-brand-500 px-5 text-base font-semibold text-white transition-colors hover:bg-brand-700"
+          >
+            <Plus className="size-4" aria-hidden="true" />
+            New programme
+          </Link>
+        )}
       </header>
 
       <div className="flex flex-wrap items-center gap-3">

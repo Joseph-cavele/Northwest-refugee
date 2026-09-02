@@ -69,10 +69,46 @@ export interface Programme {
   coordinators: (CaseCaseworker | Id)[];
   startDate: IsoDate | null;
   endDate: IsoDate | null;
+
+  /*
+   * The screening form applicants answer for this programme. `startScreening` reads it and
+   * freezes a copy onto the screening, which is what keeps programme-specific forms out of
+   * the code — null is legitimate and means the screening carries notes and a decision only.
+   */
+  screeningTemplate: Id | null;
+  /** The office's own word for the kind of programme. Not the reporting pillar. */
+  category: string;
+  requirements: string;
+  location: string;
+
   archivedAt: IsoDate | null;
   isArchived: boolean;
   createdAt: IsoDate;
   updatedAt: IsoDate;
+}
+
+export interface ProgrammeInput {
+  name: string;
+  pillar: ProgrammePillar;
+  description?: string;
+  category?: string;
+  requirements?: string;
+  location?: string;
+  startDate?: string | null;
+  endDate?: string | null;
+  screeningTemplate?: Id | null;
+}
+
+export function createProgramme(input: ProgrammeInput): Promise<Programme> {
+  return api.post<Programme>('/programmes', input);
+}
+
+/**
+ * `pillar` is accepted but the server refuses to change it once a programme has left
+ * PLANNED — every historical figure that grouped by it would silently move.
+ */
+export function updateProgramme(id: Id, input: Partial<ProgrammeInput>): Promise<Programme> {
+  return api.patch<Programme>(`/programmes/${id}`, input);
 }
 
 export interface Cohort {

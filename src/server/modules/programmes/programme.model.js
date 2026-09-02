@@ -37,6 +37,31 @@ const programmeSchema = new Schema(
     startDate: { type: Date, default: null },
     endDate: { type: Date, default: null },
 
+    /*
+     * THE FORM AN APPLICANT IS SCREENED WITH, chosen by whoever set the programme up.
+     *
+     * This one reference is what stops programme-specific screening forms being hard-coded
+     * into pages. `startScreening` reads it and freezes a copy onto the screening, so adding
+     * a new skills programme is an administrator's afternoon rather than a developer's.
+     *
+     * Null is a legitimate state: a programme that has not decided on its questions yet can
+     * still be screened for, with notes and a decision and no form.
+     */
+    screeningTemplate: {
+      type: Schema.Types.ObjectId,
+      ref: 'ScreeningTemplate',
+      default: null,
+      index: true,
+    },
+
+    /* What kind of programme this is, in the office's own words — "Computer skills",
+       "Sewing". Distinct from `pillar`, which is the reporting axis a funder sees. */
+    category: { type: String, trim: true, maxlength: 80, default: '' },
+    /* Free text, because "must be able to read and write" and "own sewing machine helpful"
+       are both real requirements and neither is a field. */
+    requirements: { type: String, trim: true, maxlength: 1000, default: '' },
+    location: { type: String, trim: true, maxlength: 200, default: '' },
+
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     archivedAt: { type: Date, default: null, index: true },
     deletedAt: { type: Date, default: null, index: true },

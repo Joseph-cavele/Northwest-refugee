@@ -61,6 +61,23 @@ export const ACTIONS = Object.freeze({
   EVENT_PUBLISHED: 'event.published',
   EVENT_UNPUBLISHED: 'event.unpublished',
   EVENT_DELETED: 'event.deleted',
+
+  /*
+   * Intake and screening. INTAKE_LINKED and SCREENING_DECIDED are the two that matter most
+   * here: the first records who decided that an applicant was somebody already on the
+   * register, and the second records who decided a person would be taken on, or not. Both
+   * are judgements about a human being made by a named member of staff on a date, which is
+   * exactly the class of act an audit trail exists for.
+   */
+  INTAKE_CREATED: 'intake.created',
+  INTAKE_UPDATED: 'intake.updated',
+  INTAKE_LINKED: 'intake.linked',
+  SCREENING_STARTED: 'screening.started',
+  SCREENING_UPDATED: 'screening.updated',
+  SCREENING_DECIDED: 'screening.decided',
+  SCREENING_TEMPLATE_CREATED: 'screening_template.created',
+  SCREENING_TEMPLATE_UPDATED: 'screening_template.updated',
+  SCREENING_TEMPLATE_STATUS_CHANGED: 'screening_template.status_changed',
   ENROLLED: 'enrollment.created',
   ENROLLMENT_UPDATED: 'enrollment.updated',
   ATTENDANCE_CAPTURED: 'attendance.captured',

@@ -164,6 +164,36 @@ export const passwordResetLimiter = limiter('password-reset', { windowMs: 60 * 6
 export const intakeLimiter = limiter('intake', { windowMs: 60 * 60 * 1000, limit: 5 });
 
 /*
+ * The unauthenticated read surface: /api/v1/public/**, and the pages that render from it.
+ *
+ * WHY THIS ONE EXISTS AT ALL. Everything else under /api/v1 stands behind `route({
+ * permission })`, so an anonymous flood is refused at the token check before it reaches
+ * Mongo. The public event listing has no such gate — that is the whole point of it, a person
+ * looking for a community meeting must not need an account — which makes it the only route
+ * in this application where an anonymous caller can put load on the database by asking
+ * politely and repeatedly.
+ *
+ * WHAT IT IS PROTECTING IS AVAILABILITY, NOT SECRECY. The data behind it is published on
+ * purpose and a scraper is welcome to every byte; the concern is a loop that costs the
+ * office its dashboard because a shared Atlas tier is saturated. So the limit is set well
+ * above any human reading pattern and well below a script's.
+ *
+ * SIXTY IN FIVE MINUTES. A visitor reading the noticeboard and opening six events makes
+ * seven requests; a phone with a flaky connection retrying makes a few more. Sixty leaves an
+ * order of magnitude of headroom for a household behind one address — a school or an
+ * internet café shares an IP, and locking those out would fall hardest on exactly the people
+ * this site is for. The responses also carry a 60-second Cache-Control, so a well-behaved
+ * client and any CDN in front of this never approach the limit.
+ *
+ * PER-INSTANCE, like every limiter in this file — N instances means N × 60. For a read-only
+ * public endpoint that is an acceptable approximation, the same judgement the broad /api
+ * limiter is written under. It is NOT acceptable for the credential limiters, and this one
+ * should ride along with them into the shared store rather than being an argument for
+ * leaving them.
+ */
+export const publicReadLimiter = limiter('public-read', { windowMs: 5 * 60 * 1000, limit: 60 });
+
+/*
  * OUTBOUND, NOT INBOUND: how often this deployment may call Gemini, whoever asked.
  *
  * `aiLimiter` already caps one visitor at twenty questions per fifteen minutes, which is the

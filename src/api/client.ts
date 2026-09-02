@@ -27,7 +27,7 @@ const BASE = '';
 const PREFIX = '/api/v1';
 
 export interface RequestOptions {
-  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   /**
    * Serialised as JSON, unless it is a `FormData` — which is sent as-is, with no
    * Content-Type of ours. See the note in `send()`. Omit for GET.
@@ -257,6 +257,14 @@ export const api = {
     request<T>(path, { ...options, method: 'GET' }),
   post: <T>(path: string, body?: unknown, options?: Omit<RequestOptions, 'method' | 'body'>) =>
     request<T>(path, { ...options, method: 'POST', body }),
+  /*
+   * PUT replaces a whole collection; PATCH changes named fields. The distinction earns its
+   * keep on screening answers: a form filled in over minutes needs the saved set to BE the
+   * set on screen, so an answer the officer cleared is actually cleared rather than lingering
+   * from an earlier save. A PATCH there would leave no way to remove one.
+   */
+  put: <T>(path: string, body?: unknown, options?: Omit<RequestOptions, 'method' | 'body'>) =>
+    request<T>(path, { ...options, method: 'PUT', body }),
   patch: <T>(path: string, body?: unknown, options?: Omit<RequestOptions, 'method' | 'body'>) =>
     request<T>(path, { ...options, method: 'PATCH', body }),
   /*

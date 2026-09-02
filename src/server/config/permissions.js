@@ -72,6 +72,22 @@ export const PERMISSIONS = Object.freeze({
   ENROLLMENT_READ: 'enrollment:read',
   ENROLLMENT_UPDATE: 'enrollment:update',
   ATTENDANCE_CAPTURE: 'attendance:capture',
+  /*
+   * Intake and screening.
+   *
+   * SCREENING_DECIDE IS SEPARATE FROM SCREENING_CONDUCT, and that separation is the control
+   * this module rests on: conducting a screening is asking somebody questions and writing
+   * down the answers, while deciding is the act that creates a register record for a person
+   * or refuses them one. A peer leader at the desk can do the first. The second is a
+   * judgement the organisation is answerable for.
+   */
+  INTAKE_CREATE: 'intake:create',
+  INTAKE_READ: 'intake:read',
+  INTAKE_UPDATE: 'intake:update',
+  SCREENING_CONDUCT: 'screening:conduct',
+  SCREENING_DECIDE: 'screening:decide',
+  SCREENING_TEMPLATE_MANAGE: 'screening_template:manage',
+
   EVENT_CREATE: 'event:create',
   EVENT_READ: 'event:read',
   EVENT_UPDATE: 'event:update',
@@ -134,6 +150,12 @@ export const ROLE_PERMISSIONS = Object.freeze({
   // Oversight and the approval half of every maker-checker pair. Holds no `*:create`
   // on finance — that omission is the segregation of duties, not an oversight.
   [ROLES.EXECUTIVE_DIRECTOR]: [
+    // Reads applications and decides them; owns the screening forms. Does not capture
+    // intakes, which is desk work.
+    P.INTAKE_READ,
+    P.SCREENING_CONDUCT,
+    P.SCREENING_DECIDE,
+    P.SCREENING_TEMPLATE_MANAGE,
     P.USER_READ,
     // The ED holds the invite-adjacent permissions the Admin Officer has, so onboarding
     // does not stall when there is no Admin Officer in post.
@@ -178,6 +200,11 @@ export const ROLE_PERMISSIONS = Object.freeze({
   ],
 
   [ROLES.ADMIN_OFFICER]: [
+    P.INTAKE_CREATE,
+    P.INTAKE_READ,
+    P.INTAKE_UPDATE,
+    P.SCREENING_CONDUCT,
+    P.SCREENING_DECIDE,
     P.USER_INVITE,
     P.USER_READ,
     P.USER_UPDATE,
@@ -221,6 +248,13 @@ export const ROLE_PERMISSIONS = Object.freeze({
 
   // Everything below is narrowed to their assigned programmes by scopeToProgrammes().
   [ROLES.PROJECT_COORDINATOR]: [
+    P.INTAKE_CREATE,
+    P.INTAKE_READ,
+    P.INTAKE_UPDATE,
+    P.SCREENING_CONDUCT,
+    P.SCREENING_DECIDE,
+    // Owns the questions asked for their own programmes.
+    P.SCREENING_TEMPLATE_MANAGE,
     P.DEPARTMENT_READ,
     P.BENEFICIARY_CREATE,
     P.BENEFICIARY_READ,
@@ -321,6 +355,11 @@ export const ROLE_PERMISSIONS = Object.freeze({
   // Community members, not office staff — scopeToProgrammes() restricts them to the
   // records they captured themselves.
   [ROLES.PEER_LEADER]: [
+    // Takes applications and asks the questions. NOT screening:decide — refusing somebody a
+    // place on the register is not a peer leader's call to make.
+    P.INTAKE_CREATE,
+    P.INTAKE_READ,
+    P.SCREENING_CONDUCT,
     P.BENEFICIARY_CREATE,
     P.BENEFICIARY_READ,
     P.BENEFICIARY_UPDATE,
@@ -337,6 +376,9 @@ export const ROLE_PERMISSIONS = Object.freeze({
   ],
 
   [ROLES.VOLUNTEER]: [
+    // Can write down that somebody came in, and nothing beyond that.
+    P.INTAKE_CREATE,
+    P.INTAKE_READ,
     P.BENEFICIARY_CREATE,
     P.BENEFICIARY_READ,
     P.ENROLLMENT_READ,

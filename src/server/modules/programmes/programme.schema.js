@@ -26,6 +26,25 @@ const programmeFields = z.object({
   coordinators: z.array(objectId('coordinator id')).max(20).optional(),
   startDate: day.nullable().optional(),
   endDate: day.nullable().optional(),
+
+  /*
+   * THE FORM AN APPLICANT IS SCREENED WITH. One reference, and it is what stops
+   * programme-specific screening forms being written into pages: `startScreening` reads it
+   * and freezes a copy onto the screening, so adding a skills programme is an
+   * administrator's afternoon.
+   *
+   * Nullable on purpose — a programme that has not settled its questions yet can still be
+   * screened for, with notes and a decision and no form.
+   */
+  screeningTemplate: objectId('screening template id').nullable().optional(),
+
+  /* The office's own word for the kind of programme — "Computer skills", "Sewing".
+     Distinct from `pillar`, which is the reporting axis a funder sees. */
+  category: z.string().trim().max(80).optional(),
+  /* Free text, because "must be able to read and write" and "own sewing machine helpful"
+     are both real requirements and neither is a field. */
+  requirements: z.string().trim().max(1000).optional(),
+  location: z.string().trim().max(200).optional(),
 });
 
 function checkDateOrder(data, ctx, startKey = 'startDate', endKey = 'endDate') {

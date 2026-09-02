@@ -28,6 +28,21 @@ const SELF_SERVICE_CHANNELS = ['WHATSAPP', 'WEB'];
 // deletes the session with nothing persisted — a Beneficiary document only ever exists
 // for someone who agreed.
 
+/*
+ * How consent was obtained, as a shared vocabulary.
+ *
+ * EXPORTED because the intake collection has to agree with it exactly. An intake's consent
+ * method is copied onto the beneficiary verbatim on approval, so a value the register does
+ * not recognise fails at the last step of the workflow — after an officer has already told
+ * somebody they have been accepted. One list, imported by both.
+ */
+export const CONSENT_METHODS = Object.freeze([
+  'WHATSAPP',
+  'SIGNED_FORM',
+  'VERBAL_WITNESSED',
+  'ONLINE_FORM',
+]);
+
 const consentSchema = new Schema(
   {
     given: { type: Boolean, required: true },
@@ -39,7 +54,7 @@ const consentSchema = new Schema(
      // the others. An auditor asking "how did this person consent" gets a true answer.
     method: {
       type: String,
-      enum: ['WHATSAPP', 'SIGNED_FORM', 'VERBAL_WITNESSED', 'ONLINE_FORM'],
+      enum: CONSENT_METHODS,
       required: true,
     },
     // Version of the consent wording agreed to. Without this, a later change to the text

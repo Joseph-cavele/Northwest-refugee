@@ -65,6 +65,14 @@ export const PERMISSIONS = {
   ENROLLMENT_UPDATE: 'enrollment:update',
   /** Wider than enrollment:create — volunteers mark registers but cannot enrol anyone. */
   ATTENDANCE_CAPTURE: 'attendance:capture',
+  /** Conducting a screening and deciding one are different acts — see server/config/permissions.js. */
+  INTAKE_CREATE: 'intake:create',
+  INTAKE_READ: 'intake:read',
+  INTAKE_UPDATE: 'intake:update',
+  SCREENING_CONDUCT: 'screening:conduct',
+  SCREENING_DECIDE: 'screening:decide',
+  SCREENING_TEMPLATE_MANAGE: 'screening_template:manage',
+
   EVENT_CREATE: 'event:create',
   EVENT_READ: 'event:read',
   EVENT_UPDATE: 'event:update',
@@ -115,6 +123,10 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
    * "complete" this list.
    */
   EXECUTIVE_DIRECTOR: [
+    P.INTAKE_READ,
+    P.SCREENING_CONDUCT,
+    P.SCREENING_DECIDE,
+    P.SCREENING_TEMPLATE_MANAGE,
     P.USER_READ,
     P.USER_INVITE,
     P.ACCESS_REQUEST_READ,
@@ -154,6 +166,11 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
   ],
 
   ADMIN_OFFICER: [
+    P.INTAKE_CREATE,
+    P.INTAKE_READ,
+    P.INTAKE_UPDATE,
+    P.SCREENING_CONDUCT,
+    P.SCREENING_DECIDE,
     P.USER_INVITE,
     P.USER_READ,
     P.USER_UPDATE,
@@ -197,6 +214,12 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
 
   /** Everything here is further narrowed to their assigned programmes, server-side. */
   PROJECT_COORDINATOR: [
+    P.INTAKE_CREATE,
+    P.INTAKE_READ,
+    P.INTAKE_UPDATE,
+    P.SCREENING_CONDUCT,
+    P.SCREENING_DECIDE,
+    P.SCREENING_TEMPLATE_MANAGE,
     P.DEPARTMENT_READ,
     P.BENEFICIARY_CREATE,
     P.BENEFICIARY_READ,
@@ -294,6 +317,9 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
 
   /** Community members. Server-side, they see only records they captured themselves. */
   PEER_LEADER: [
+    P.INTAKE_CREATE,
+    P.INTAKE_READ,
+    P.SCREENING_CONDUCT,
     P.BENEFICIARY_CREATE,
     P.BENEFICIARY_READ,
     P.BENEFICIARY_UPDATE,
@@ -310,6 +336,8 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
   ],
 
   VOLUNTEER: [
+    P.INTAKE_CREATE,
+    P.INTAKE_READ,
     P.BENEFICIARY_CREATE,
     P.BENEFICIARY_READ,
     P.ENROLLMENT_READ,

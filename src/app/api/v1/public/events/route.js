@@ -1,5 +1,6 @@
 import { route } from '@/server/http/route';
 import { paginated } from '@/server/http/respond';
+import { publicReadLimiter } from '@/server/http/rateLimit';
 import * as service from '@/server/modules/events/event.service';
 import * as schema from '@/server/modules/events/event.schema';
 
@@ -21,7 +22,14 @@ import * as schema from '@/server/modules/events/event.schema';
  * published-and-not-deleted condition itself, and returns a whitelisted projection rather
  * than the documents. Read the note above it before changing anything here.
  */
-export const GET = route({ query: schema.listPublicEventsSchema }, async ({ query }) => {
+export const GET = route({ query: schema.listPublicEventsSchema }, async ({ query, ctx }) => {
+  /*
+   * Before any work, and before Mongo is touched. This is the only route in the application
+   * an anonymous caller can reach that queries the database, so the limiter is the only
+   * thing standing between a loop and the office's Atlas tier — see publicReadLimiter.
+   */
+  publicReadLimiter.check(ctx.ip);
+
   const response = paginated(await service.listPublicEvents(query));
 
   /*

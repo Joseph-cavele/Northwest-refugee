@@ -5,6 +5,8 @@ import { usePathname } from 'next/navigation';
 import {
   Banknote,
   CalendarDays,
+  ClipboardList,
+  FileQuestion,
   FileSpreadsheet,
   FileText,
   GraduationCap,
@@ -81,6 +83,24 @@ const SECTIONS: Section[] = [
   {
     heading: 'People',
     built: [
+      /*
+       * INTAKE SITS ABOVE BENEFICIARIES, and the order is the workflow: somebody asks, then
+       * they are screened, then — if approved — they are on the register. A queue listed
+       * under the register would suggest the people in it are already on it, which is the
+       * one thing this module exists to say they are not.
+       */
+      {
+        to: '/dashboard/intake',
+        label: 'Intake',
+        icon: ClipboardList,
+        permission: PERMISSIONS.INTAKE_READ,
+      },
+      {
+        to: '/dashboard/screening-templates',
+        label: 'Screening forms',
+        icon: FileQuestion,
+        permission: PERMISSIONS.SCREENING_TEMPLATE_MANAGE,
+      },
       {
         to: '/dashboard/beneficiaries',
         label: 'Beneficiaries',
